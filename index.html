@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>キャンピングカー計画帳</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  /* レイアウト: タブ切り替えの1カラム、各ビューはパネルを縦積み(広い画面では2カラム) */
+  :root {
+    --bg: #f2f3ef;
+    --panel: #ffffff;
+    --panel-soft: #f7f8f4;
+    --border: #dcdfd4;
+    --text: #23261d;
+    --muted: #5b604f;
+    --accent: #5a6522;
+    --accent-dark: #444d17;
+    --accent-soft: #e9ecd6;
+    --kid: #2f6f7a;
+    --kid-soft: #dcecee;
+    --other: #6b6f78;
+    --ok: #2f7344;
+    --ok-soft: #e1efe5;
+    --warn: #85600c;
+    --warn-soft: #f5ebd0;
+    --ng: #a33838;
+    --ng-soft: #f5dfdf;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px 16px 48px;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  h1 { font-size: 1.45rem; margin: 0 0 2px; }
+  .subtitle { color: var(--muted); margin: 0 0 16px; font-size: 0.88rem; }
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 14px; border-bottom: 2px solid var(--border); }
+  .tabs button {
+    font: inherit; font-size: 0.92rem; padding: 8px 14px; border: none; background: none;
+    color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;
+  }
+  .tabs button[aria-selected="true"] { color: var(--accent-dark); border-bottom-color: var(--accent); font-weight: 600; }
+  .tabs .count { display: inline-block; min-width: 1.4em; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-dark); font-size: 0.75rem; text-align: center; }
+  .view { display: none; }
+  .view.active { display: grid; gap: 16px; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; min-width: 0; }
+  .panel h2 { font-size: 1.02rem; margin: 0 0 4px; }
+  .panel h3 { font-size: 0.92rem; margin: 16px 0 6px; }
+  .desc { font-size: 0.82rem; color: var(--muted); margin: 0 0 12px; }
+  .note { font-size: 0.78rem; color: var(--muted); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 10px; font-size: 0.86rem; }
+  .field label, .field .lbl { font-weight: 600; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  select, input[type=text], input[type=number], input[type=date], button {
+    font: inherit; font-size: 0.9rem; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text);
+  }
+  input[type=number] { width: 7em; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.primary:hover { background: var(--accent-dark); }
+  button.small { font-size: 0.8rem; padding: 3px 8px; }
+  .checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px 12px; font-size: 0.86rem; }
+  .checks label { display: flex; gap: 6px; align-items: flex-start; }
+  .checks input { margin-top: 4px; }
+  /* 車種カード */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .card { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; background: var(--panel); }
+  .card.fit { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .card h3 { margin: 0 0 2px; font-size: 1rem; }
+  .card .base { font-size: 0.8rem; color: var(--muted); margin: 0 0 8px; }
+  .card dl { display: grid; grid-template-columns: 5.5em 1fr; gap: 2px 8px; margin: 0 0 8px; font-size: 0.84rem; }
+  .card dt { color: var(--muted); }
+  .card dd { margin: 0; }
+  .card ul { margin: 0; padding-left: 1.2em; font-size: 0.82rem; }
+  .badge { display: inline-block; font-size: 0.72rem; padding: 1px 7px; border-radius: 10px; font-weight: 600; vertical-align: middle; }
+  .badge.ok { background: var(--ok-soft); color: var(--ok); }
+  .badge.warn { background: var(--warn-soft); color: var(--warn); }
+  .badge.ng { background: var(--ng-soft); color: var(--ng); }
+  .badge.info { background: var(--accent-soft); color: var(--accent-dark); }
+  /* 結果 */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .kpi { background: var(--panel-soft); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .kpi .k { font-size: 0.76rem; color: var(--muted); }
+  .kpi .v { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .kpi .v small { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
+  .checklist { list-style: none; padding: 0; margin: 0; font-size: 0.86rem; }
+  .checklist li { padding: 6px 0; border-bottom: 1px dashed var(--border); display: flex; gap: 8px; align-items: baseline; }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist .badge { flex: 0 0 auto; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+  th, td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.78rem; background: var(--panel-soft); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td input[type=number] { width: 6.5em; padding: 3px 6px; text-align: right; }
+  tr.group td { background: var(--panel-soft); font-weight: 600; font-size: 0.8rem; color: var(--accent-dark); }
+  tfoot td { font-weight: 700; border-top: 2px solid var(--border); }
+  /* 平面図 */
+  .plan-box { background: var(--panel-soft); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+  .plan-box svg { width: 100%; height: auto; display: block; }
+  .plan-box .p-room { fill: var(--panel); stroke: var(--muted); stroke-width: 1.5; }
+  .plan-box .p-bed { fill: var(--accent-soft); stroke: var(--accent); }
+  .plan-box .p-kid { fill: var(--kid-soft); stroke: var(--kid); }
+  .plan-box .p-kitchen { fill: none; stroke: var(--warn); stroke-dasharray: 4 3; }
+  .plan-box text { fill: var(--muted); font-size: 10px; }
+  .plan-box .t-bed { fill: var(--accent-dark); text-anchor: middle; }
+  .plan-box .t-kid { fill: var(--kid); text-anchor: middle; }
+  .plan-box .t-kitchen { fill: var(--warn); font-size: 9px; }
+  .plan-box .t-ng { fill: var(--ng); }
+  button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.confirming { background: var(--ng); border-color: var(--ng); color: #fff; }
+  /* 地図 */
+  #map { height: 440px; border-radius: 8px; border: 1px solid var(--border); }
+  .map-fallback { display: none; padding: 20px; text-align: center; color: var(--muted); background: var(--panel-soft); border-radius: 8px; }
+  .shop-list tr { cursor: pointer; }
+  .shop-list tr:hover td { background: var(--accent-soft); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.8rem; color: var(--muted); margin: 6px 0 10px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  .empty { padding: 18px; text-align: center; color: var(--muted); font-size: 0.88rem; }
+  a { color: var(--accent-dark); }
+  .sources { font-size: 0.8rem; padding-left: 1.2em; margin: 0; }
+  .sources li { margin-bottom: 3px; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 0.86rem; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  @media (max-width: 560px) {
+    body { padding: 16px 12px 40px; }
+    .panel { padding: 14px; }
+    .tabs button { padding: 7px 9px; font-size: 0.85rem; }
+    #map { height: 340px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>キャンピングカー計画帳</h1>
+  <p class="subtitle">車種選び・自作(DIY)の空間と材料の計算・制作依頼先の地図をまとめたシミュレーター。入力内容はこのページを閉じると消えます。</p>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-view="types">車種ガイド</button>
+    <button role="tab" aria-selected="false" data-view="diy">自作シミュレーター</button>
+    <button role="tab" aria-selected="false" data-view="shops">制作依頼先マップ</button>
+    <button role="tab" aria-selected="false" data-view="list">計算結果リスト<span class="count" id="listCount">0</span></button>
+    <button role="tab" aria-selected="false" data-view="info">情報源</button>
+  </nav>
+
+  <!-- ===== 車種ガイド ===== -->
+  <section class="view active" id="view-types">
+    <div class="panel">
+      <h2>人数と免許から絞り込む</h2>
+      <p class="desc">寝る人数と免許を取った日を入れると、向いている車種が枠で強調され、運転できるかどうかの目安が表示されます。</p>
+      <div class="row">
+        <div class="field"><label for="tPeople">寝る人数</label><input type="number" id="tPeople" min="1" max="10" value="4"></div>
+        <div class="field"><label for="tLicense">普通免許の取得日</label><input type="date" id="tLicense"></div>
+        <div class="field"><span class="lbl">運転できる車両総重量</span><span id="tLicenseResult" class="note">取得日を入れると表示します</span></div>
+      </div>
+    </div>
+    <div class="cards" id="typeCards"></div>
+    <p class="note">価格帯は記事に出ていた目安で、仕様・新車か中古かで大きく変わります。車両総重量は車種ごとの一般的な傾向(推論)です。実際の車両総重量は車検証やカタログで確認してください。</p>
+  </section>
+
+  <!-- ===== 自作シミュレーター ===== -->
+  <section class="view" id="view-diy">
+    <div class="grid2">
+      <div class="panel">
+        <h2>条件</h2>
+        <p class="desc">ベース車と人数を選ぶと、右側の空間チェックと下の材料リストがすぐに計算し直されます。</p>
+        <div class="field">
+          <label for="dBase">ベース車(荷室寸法)</label>
+          <select id="dBase"></select>
+          <span class="note" id="dBaseNote"></span>
+        </div>
+        <div class="row">
+          <div class="field"><label for="dL">荷室長 mm</label><input type="number" id="dL" step="10"></div>
+          <div class="field"><label for="dW">荷室幅 mm</label><input type="number" id="dW" step="10"></div>
+          <div class="field"><label for="dH">荷室高 mm</label><input type="number" id="dH" step="10"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="dRiders">乗る人数</label><input type="number" id="dRiders" min="1" max="10" value="4"></div>
+          <div class="field"><label for="dAdults">寝る大人</label><input type="number" id="dAdults" min="0" max="8" value="2"></div>
+          <div class="field"><label for="dKids">寝る子ども</label><input type="number" id="dKids" min="0" max="8" value="2"></div>
+        </div>
+        <div class="field">
+          <label for="dBed">ベッドの置き方</label>
+          <select id="dBed">
+            <option value="auto">自動(1段で足りなければ2段)</option>
+            <option value="single">1段のみ</option>
+            <option value="bunk">2段ベッド</option>
+          </select>
+        </div>
+        <div class="row">
+          <div class="field"><label for="dNights">連泊日数(電気の計算用)</label><input type="number" id="dNights" min="1" max="7" value="2"></div>
+          <div class="field"><label for="dVehicle">ベース車の価格 円</label><input type="number" id="dVehicle" step="10000" value="0" style="width:9em"></div>
+        </div>
+        <div class="field">
+          <span class="lbl">付ける装備</span>
+          <div class="checks" id="dEquip"></div>
+        </div>
+        <label class="row" style="font-size:0.86rem"><input type="checkbox" id="d8num" checked> 8ナンバー(キャンピング車)の登録を目指す</label>
+      </div>
+
+      <div class="panel">
+        <h2>空間チェック</h2>
+        <p class="desc">寝る場所は大人が180×50cm、子どもが120×40cm(8ナンバー要件と同じ寸法)で数えています。</p>
+        <div class="kpis" id="dKpis"></div>
+        <div class="plan-box" id="dPlan" aria-label="荷室の平面図"></div>
+        <h3>判定</h3>
+        <ul class="checklist" id="dChecks"></ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h2>材料・費用リスト</h2>
+          <p class="desc" style="margin:0">数量は荷室寸法と人数から自動計算します。単価は通販でよくある価格帯の目安(推論)なので、実際の見積もりに合わせて書き換えてください。</p>
+        </div>
+        <div class="row">
+          <input type="text" id="dName" placeholder="この案の名前(例: ハイエース4人案)" style="width:16em">
+          <button class="primary" id="dSave">計算結果リストに追加</button>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-top:10px">
+        <table id="dMaterials">
+          <thead><tr><th>項目</th><th>計算根拠</th><th class="num">数量</th><th class="num">単価(円)</th><th class="num">小計</th></tr></thead>
+          <tbody></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+      <h3>電気の計算</h3>
+      <p class="note" id="dPower"></p>
+    </div>
+  </section>
+
+  <!-- ===== 制作依頼先マップ ===== -->
+  <section class="view" id="view-shops">
+    <div class="panel">
+      <h2>制作依頼先マップ</h2>
+      <p class="desc">記事や販売店ガイドで所在地が確認できたビルダー・販売店です。点は<strong>市区町村の中心あたり</strong>に置いていて、正確な住所ではありません。地図をクリックするとそこを基準地点にして、各社までの直線距離を出します。</p>
+      <div class="row" style="margin-bottom:8px">
+        <select id="sArea">
+          <option value="">すべての地域</option>
+          <option value="北海道・東北">北海道・東北</option>
+          <option value="関東">関東</option>
+          <option value="中部">中部</option>
+          <option value="関西">関西</option>
+          <option value="中国・四国">中国・四国</option>
+          <option value="九州">九州</option>
+        </select>
+        <select id="sKind">
+          <option value="">すべての区分</option>
+          <option value="build">製造(ビルダー)</option>
+          <option value="sell">販売・その他</option>
+        </select>
+        <select id="sType">
+          <option value="">すべての車種</option>
+          <option value="軽キャンパー">軽キャンパー</option>
+          <option value="バンコン">バンコン</option>
+          <option value="キャブコン">キャブコン</option>
+          <option value="バスコン">バスコン</option>
+          <option value="トレーラー">トレーラー</option>
+        </select>
+        <span class="note" id="sOrigin">基準地点: 未設定(地図をクリック)</span>
+      </div>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--accent)"></span>製造(ビルダー)</span>
+        <span><span class="dot" style="background:var(--other)"></span>販売・その他/区分未確認</span>
+        <span><span class="dot" style="background:var(--ok)"></span>基準地点</span>
+      </div>
+      <div id="map"></div>
+      <div class="map-fallback" id="mapFallback">地図を読み込めませんでした(オフラインの可能性があります)。下の一覧はそのまま使えます。</div>
+    </div>
+    <div class="panel">
+      <h2>一覧 <span class="note" id="sCount"></span></h2>
+      <div class="table-wrap">
+        <table class="shop-list">
+          <thead><tr><th>社名</th><th>所在地</th><th>区分</th><th>主な車種</th><th class="num">距離</th><th>出典</th></tr></thead>
+          <tbody id="sBody"></tbody>
+        </table>
+      </div>
+      <p class="note">依頼する前に、各社の公式サイトで所在地・持ち込み架装の可否・8ナンバーの構造変更に対応しているか・アフターサービスを確認してください。</p>
+    </div>
+  </section>
+
+  <!-- ===== 計算結果リスト ===== -->
+  <section class="view" id="view-list">
+    <div class="panel">
+      <h2>計算結果リスト</h2>
+      <p class="desc">自作シミュレーターで「計算結果リストに追加」した案を並べて比べられます。安い順・寝られる人数順に並び替えられます。</p>
+      <div class="row" style="margin-bottom:8px">
+        <select id="lSort">
+          <option value="added">追加した順</option>
+          <option value="total">総額が安い順</option>
+          <option value="material">材料費が安い順</option>
+          <option value="sleep">寝られる人数が多い順</option>
+        </select>
+        <button class="small" id="lCopy">表をコピー(表計算に貼れる形式)</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>案の名前</th><th>ベース車</th><th class="num">乗車/就寝</th><th>寝る場所</th><th>8ナンバー</th><th class="num">材料・装備費</th><th class="num">総額</th><th></th></tr></thead>
+          <tbody id="lBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 情報源 ===== -->
+  <section class="view" id="view-info">
+    <div class="panel">
+      <h2>このアプリの数値の出典</h2>
+      <p class="desc">2026年10月19日に調べた内容です。法令は二次情報(解説記事)をもとにしているので、申請の前に国土交通省の通達の原文や運輸支局で確認してください。</p>
+      <h3>8ナンバー(キャンピング車)の構造要件</h3>
+      <ul class="sources">
+        <li>就寝設備は乗車定員の3分の1(2022年4月から端数切り捨て。少人数の車は1名分で可)、大人180×50cm・子ども120×40cm、座席を倒しただけのものは不可。調理台85cm以下なら室内高120cmで可 — <a href="https://kuruma-news.jp/post/499386/2" target="_blank" rel="noopener">くるまのニュース</a></li>
+        <li>給水・排水タンクはそれぞれ10L以上 — <a href="https://www.bepal.net/archives/360512" target="_blank" rel="noopener">BE-PAL</a></li>
+        <li>根拠の通達「キャンピング車等に係る構造要件等について」(2022年4月1日施行) — <a href="https://office-tree.jp/blog/vehicle/camping-car-8-number-registration/" target="_blank" rel="noopener">行政書士事務所の解説</a> / <a href="https://www.mlit.go.jp/jidosha/kensatoroku/kensa/kns07_2.htm" target="_blank" rel="noopener">国土交通省 特種用途自動車のページ</a></li>
+        <li class="note">少人数の車の下限が「乗車定員3名以下」か「2名以下」かは記事によって書き方が違うため、このアプリでは「最低1名分」とだけ判定しています。</li>
+      </ul>
+      <h3>ベース車の荷室寸法</h3>
+      <ul class="sources">
+        <li>ハイエース スーパーGL 標準ボディ: <a href="https://toyota.jp/pages/contents/request/webcatalog/hiacevan/hiace_main_202107.pdf" target="_blank" rel="noopener">トヨタ公式カタログ(2021年7月)</a> / キャラバン プレミアムGX: <a href="https://car-repo.jp/?p=162573" target="_blank" rel="noopener">car-repo の比較記事</a></li>
+        <li>エブリイ・N-VAN: <a href="https://www.webcartop.jp/2021/04/684336/2/" target="_blank" rel="noopener">WEB CARTOP(2021年)</a> — モデルチェンジで変わっている可能性あり</li>
+      </ul>
+      <h3>車種・免許</h3>
+      <ul class="sources">
+        <li>車種の分類・価格帯: <a href="https://www.goo-net.com/magazine/?p=264436" target="_blank" rel="noopener">グーネットマガジン</a> / <a href="https://kuruma-news.jp/post/207013" target="_blank" rel="noopener">くるまのニュース(免許)</a> / <a href="https://www.jackery.jp/blogs/vanlife/turning-hiace-into-campervan-by-diy" target="_blank" rel="noopener">Jackery(ハイエースの価格帯)</a></li>
+        <li>普通免許の区分(取得日で 3.5t未満 / 5t未満 / 8t未満)、けん引免許(被けん引車の総重量750kg超)は道路交通法の一般的な区分です。最新情報は警察庁・運転免許センターで確認してください。</li>
+      </ul>
+      <h3>制作依頼先</h3>
+      <ul class="sources">
+        <li><a href="https://camphack.nap-camp.com/1898/3" target="_blank" rel="noopener">CAMP HACK のビルダー紹介</a>(住所付き11社) / <a href="https://cchikaku.com/builder/kansai/" target="_blank" rel="noopener">キャンピングカー販売店ガイド 関西</a>(1ページ目の10件) / 各社のプレスリリース・掲載記事</li>
+      </ul>
+      <h3>DIYの費用感</h3>
+      <ul class="sources">
+        <li>自作の実例(中古車45万円+総額120万円、車300万円弱+DIY約100万円など): <a href="https://bunshun.jp/articles/-/71467?page=3" target="_blank" rel="noopener">文春オンライン</a> / <a href="https://www.jackery.jp/blogs/vanlife/turning-hiace-into-campervan-by-diy" target="_blank" rel="noopener">Jackery</a></li>
+        <li>材料ごとの単価はこのアプリが置いた目安(推論)です。実際の価格を調べて上書きしてください。</li>
+      </ul>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- データ ---------- */
+  var TYPES = [
+    { id: "kei", name: "軽キャンパー", base: "エブリイ・N-VAN・ハイゼット等の軽バン/軽トラ", sleep: [1, 2], sleepMax: 4,
+      price: "200〜400万円前後(推論)", gvw: 1.3, license: "普通免許",
+      good: ["維持費・税金が安く、普段の買い物にも使える", "狭い道や普通の駐車場に止めやすい"],
+      bad: ["4人寝るには2段ベッドやポップアップ屋根が必要", "高速道路の登り坂や横風に弱め"] },
+    { id: "van", name: "バンコン", base: "ハイエース・キャラバン等の商用バン", sleep: [2, 4], sleepMax: 5,
+      price: "400〜700万円以上", gvw: 3.0, license: "普通免許(多くは3.5t未満)",
+      good: ["見た目は普通のバンで、通勤や買い物にも使える", "自作(DIY)のベースとして情報が一番多い"],
+      bad: ["室内の高さが低め(立って歩けないものが多い)", "人気が高く中古でも値段が下がりにくい"] },
+    { id: "cab", name: "キャブコン", base: "カムロード等の小型トラック(運転席を残して後ろが居室)", sleep: [4, 6], sleepMax: 7,
+      price: "500〜1,500万円", gvw: 3.4, license: "普通免許で乗れる車種が多いが、3.5tを超えるものは準中型以上",
+      good: ["室内が広く、家族4〜6人でも寝られる", "運転席の上にもベッド(バンク)があることが多い"],
+      bad: ["背が高く、立体駐車場やドライブスルーに入れない", "重さが3.5tに近く、取得日によっては普通免許で運転できない"] },
+    { id: "bus", name: "バスコン", base: "コースター等のマイクロバス", sleep: [4, 7], sleepMax: 8,
+      price: "1,000万円以上(推論)", gvw: 5.5, license: "中型・準中型以上が必要になる車種が多い",
+      good: ["室内が最も広く、長期旅行や大人数向き", "車体が頑丈で断熱しやすい"],
+      bad: ["駐車場所・維持費の負担が大きい", "運転には大きな車の免許が必要なことが多い"] },
+    { id: "trailer", name: "キャンピングトレーラー", base: "乗用車やSUVで引っぱる被けん引車", sleep: [2, 6], sleepMax: 6,
+      price: "200〜800万円前後(推論)+引っぱる車", gvw: 0.75, gvwNote: "トレーラー本体", license: "総重量750kg以下は普通免許、超えるとけん引免許",
+      good: ["切り離せば、引っぱる車だけで観光や買い物ができる", "トレーラー本体は車検期間が長めで維持費を抑えやすい(推論)"],
+      bad: ["バックでの車庫入れに慣れが要る", "高速料金の区分が上がる・駐車場所を選ぶ"] },
+    { id: "truck", name: "トラキャン", base: "ピックアップトラックの荷台に居室(シェル)を載せる", sleep: [2, 4], sleepMax: 4,
+      price: "300〜800万円前後(推論)", gvw: 3.0, license: "ベース車の総重量しだい(多くは普通免許)",
+      good: ["シェルを降ろせば普通のトラックとして使える", "悪路に強いベース車を選べる"],
+      bad: ["日本で買えるピックアップの車種が少ない", "重心が高く横風に弱い"] }
+  ];
+
+  // 荷室寸法: L=荷室長, W=荷室幅, H=荷室高(mm)、seats=もともとの乗車定員
+  var BASES = [
+    { id: "hiace-2", name: "ハイエース スーパーGL 標準(後席を使う状態)", L: 1855, W: 1520, H: 1320, seats: 5, note: "トヨタ公式カタログの数値。後席を残すので5人乗れるが、寝る場所は後席の後ろだけ。" },
+    { id: "hiace-full", name: "ハイエース スーパーGL 標準(後席を外した状態)", L: 3000, W: 1520, H: 1320, seats: 2, note: "トヨタ公式カタログの荷室長3,000mm。後席を外すと乗車定員が減るので、座席を付ける場合はその分を考える。" },
+    { id: "caravan-2", name: "キャラバン プレミアムGX(後席を使う状態)", L: 1860, W: 1520, H: 1325, seats: 5, note: "比較記事(car-repo)の数値。" },
+    { id: "caravan-full", name: "キャラバン プレミアムGX(後席を外した状態)", L: 3050, W: 1520, H: 1325, seats: 2, note: "比較記事(car-repo)の数値。" },
+    { id: "every", name: "エブリイ(後席を倒した状態)", L: 1910, W: 1385, H: 1240, seats: 2, note: "WEB CARTOP(2021年)の数値。後席を倒した状態なので乗れるのは前の2人。" },
+    { id: "nvan", name: "N-VAN(後席を倒した状態)", L: 1510, W: 1390, H: 1585, seats: 2, note: "WEB CARTOP(2021年)の数値。助手席まで倒すと長さ2,635mmになる(片側のみ)。" },
+    { id: "custom", name: "その他(寸法を自分で入力)", L: 2000, W: 1400, H: 1300, seats: 4, note: "カタログの「荷室長・荷室幅・荷室高」を入力してください。" }
+  ];
+
+  // 装備: power = {w: 消費電力W, h: 1日の使用時間, perPerson: 人数倍}
+  var EQUIP = [
+    { id: "insul", name: "断熱・防音(床・壁・天井)", def: true },
+    { id: "battery", name: "サブバッテリー(リン酸鉄)", def: true },
+    { id: "inverter", name: "インバーター(家電用の100V)", def: true },
+    { id: "dcdc", name: "走行充電器", def: true },
+    { id: "solar", name: "ソーラーパネル", def: false },
+    { id: "sink", name: "シンク・給排水タンク", def: true },
+    { id: "fridge", name: "ポータブル冷蔵庫", def: true },
+    { id: "fan", name: "換気扇(ルーフベント)", def: false },
+    { id: "ff", name: "FFヒーター(冬用の暖房)", def: false },
+    { id: "blanket", name: "電気毛布(人数分)", def: false },
+    { id: "curtain", name: "カーテン・目隠し", def: true }
+  ];
+
+  // 単価の目安(推論)。画面で書き換えると以後の計算に使う
+  var PRICES = {
+    plywood: 2200, floorInsul: 1300, wallInsul: 900, reflect: 350, wallBoard: 1800, damping: 12000,
+    lumber: 650, bedBoard: 2200, mat: 6000, bunkFrame: 9000, hardware: 6000, perBedHw: 1200,
+    battery: 65, inverter: 30000, dcdc: 30000, solarPanel: 18000, mppt: 15000, wiring: 15000,
+    tank: 2000, sink: 12000, pump: 5000, fridge: 40000, fan: 40000, ff: 100000, blanket: 4000, curtain: 3000,
+    kitchen: 15000, register: 30000
+  };
+
+  var SHOPS = [
+    { name: "ドリーム・エーティー", pref: "北海道", city: "帯広市", area: "北海道・東北", lat: 42.924, lng: 143.196, kind: "sell", kindLabel: "区分未確認", types: [], src: "CAMP HACK", url: "https://camphack.nap-camp.com/1898/3" },
+    { name: "カトーモーター", pref: "新潟県", city: "燕市", area: "中部", lat: 37.673, lng: 138.882, kind: "build", kindLabel: "製造・販売", types: ["キャブコン", "バンコン"], note: "キャンピングカー製造20年の老舗", src: "CAMP HACK", url: "https://camphack.nap-camp.com/1898/3" },
+    { name: "AtoZ(エートゥゼット)", pref: "埼玉県", city: "春日部市", area: "関東", lat: 35.975, lng: 139.752, kind: "build", kindLabel: "製造", types: ["キャブコン", "軽キャンパー"], src: "dreamnews", url: "https://www.dreamnews.jp/press/0000195850" },
+    { name: "バンテック", pref: "埼玉県", city: "所沢市", area: "関東", lat: 35.799, lng: 139.469, kind: "build", kindLabel: "製造・販売", types: ["キャブコン", "軽キャンパー"], note: "キャブコンでトップシェアとされる", src: "CAMP HACK", url: "https://camphack.nap-camp.com/1898/3" },
+    { name: "日本特種ボディー(NTB)", pref: "埼玉県", city: "越谷市", area: "関東", lat: 35.891, lng: 139.791, kind: "build", kindLabel: "製造・販売", types: ["キャブコン", "バンコン"], src: "atpress", url: "https://www.atpress.ne.jp/news/314938" },
+    { name: "アールブイランド", pref: "茨城県", city: "常総市", area: "関東", lat: 36.024, lng: 139.994, kind: "build", kindLabel: "製造・販売", types: ["キャブコン", "バンコン"], src: "CAMP HACK", url: "https://camphack.nap-camp.com/1898/3" },
+    { name: "東和モータース", pref: "東京都", city: "杉並区", area: "関東", lat: 35.699, lng: 139.636, kind: "build", kindLabel: "製造・輸入・販売", types: ["キャブコン", "バンコン"], src: "CAMP HACK", url: "https://camphack.nap-camp.com/1898/3" },
+    { name: "トイファクトリー", pref: "岐阜県", city: "可児市", area: "中部", lat: 35.426, lng: 137.061, kind: "build", kindLabel: "製造・販売", types: ["バンコン"], note: "バンコンの国内売上の3割以上とされる", src: "CAMP HACK", url: "https://camphack.nap-camp.com/1281/3" },
+    { name: "レクビィ", pref: "愛知県", city: "瀬戸市", area: "中部", lat: 35.223, lng: 137.084, kind: "build", kindLabel: "製造", types: ["バンコン", "キャブコン"], note: "3Dシミュレーターでのセミオーダーあり", src: "carview!", url: "https://carview.yahoo.co.jp/news/detail/2a597927cccde12f54af8944a5fc7320ec1ee6d1/" },
+    { name: "ホワイトハウス キャンパー", pref: "愛知県", city: "愛知郡東郷町", area: "中部", lat: 35.097, lng: 137.052, kind: "build", kindLabel: "製造・販売", types: ["バンコン"], src: "グーネット掲載", url: "https://www.goo-net.com/usedcar/spread/goin/13/700056143030260606006.html" },
+    { name: "クラフトボックス", pref: "京都府", city: "久世郡久御山町", area: "関西", lat: 34.881, lng: 135.733, kind: "build", kindLabel: "製造・販売", types: ["バンコン"], src: "販売店ガイド関西", url: "https://cchikaku.com/builder/kansai/" },
+    { name: "近畿RV販売", pref: "大阪府", city: "茨木市", area: "関西", lat: 34.822, lng: 135.562, kind: "build", kindLabel: "輸入・販売・オーダー製造", types: ["キャブコン", "トレーラー", "バスコン"], src: "販売店ガイド関西", url: "https://cchikaku.com/builder/kansai/" },
+    { name: "ワゴリー", pref: "大阪府", city: "茨木市", area: "関西", lat: 34.810, lng: 135.575, kind: "build", kindLabel: "製造・販売", types: ["バンコン", "軽キャンパー"], src: "販売店ガイド関西", url: "https://cchikaku.com/builder/kansai/" },
+    { name: "エースタイルプラス", pref: "大阪府", city: "八尾市", area: "関西", lat: 34.627, lng: 135.601, kind: "build", kindLabel: "製造", types: ["軽キャンパー"], src: "販売店ガイド関西", url: "https://cchikaku.com/builder/kansai/" },
+    { name: "RRS NARA", pref: "奈良県", city: "大和郡山市", area: "関西", lat: 34.649, lng: 135.783, kind: "sell", kindLabel: "区分未確認", types: [], src: "CAMP HACK", url: "https://camphack.nap-camp.com/1898/3" },
+    { name: "大谷自動車", pref: "和歌山県", city: "紀の川市", area: "関西", lat: 34.269, lng: 135.363, kind: "build", kindLabel: "オリジナル製作・中古販売", types: ["バンコン"], src: "販売店ガイド関西", url: "https://cchikaku.com/builder/kansai/" },
+    { name: "デルタリンク", pref: "岡山県", city: "倉敷市", area: "中国・四国", lat: 34.585, lng: 133.772, kind: "build", kindLabel: "製造・販売", types: ["バンコン", "キャブコン"], src: "CAMP HACK", url: "https://camphack.nap-camp.com/1898/3" },
+    { name: "岡モータース", pref: "香川県", city: "高松市", area: "中国・四国", lat: 34.315, lng: 134.010, kind: "build", kindLabel: "製造・販売", types: ["キャブコン", "トレーラー"], src: "グーネット掲載", url: "https://www.goo-net.com/usedcar/spread/goo_sort/13/700054171830260617001.html" },
+    { name: "アネックス", pref: "徳島県", city: "吉野川市", area: "中国・四国", lat: 34.066, lng: 134.359, kind: "build", kindLabel: "製造・販売", types: ["キャブコン", "バンコン"], src: "CAMP HACK", url: "https://camphack.nap-camp.com/1898/3" },
+    { name: "ナッツRV", pref: "福岡県", city: "遠賀郡遠賀町", area: "九州", lat: 33.897, lng: 130.668, kind: "build", kindLabel: "製造・販売", types: ["キャブコン", "バンコン", "軽キャンパー"], note: "京都・名古屋などにも店舗あり", src: "gamebiz", url: "https://gamebiz.jp/news/399195" }
+  ];
+
+  var saved = [];
+  var priceOverride = {};
+  var lastResult = null;
+
+  /* ---------- ユーティリティ ---------- */
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function yen(n) { return Math.round(n).toLocaleString("ja-JP") + "円"; }
+  function man(n) { return (Math.round(n / 1000) / 10).toLocaleString("ja-JP") + "万円"; }
+  function num(id, def) { var v = parseFloat($(id).value); return isFinite(v) ? v : def; }
+  function intIn(id, def, min, max) { var v = Math.round(num(id, def)); if (v < min) v = min; if (v > max) v = max; return v; }
+  function price(key) { return priceOverride.hasOwnProperty(key) ? priceOverride[key] : PRICES[key]; }
+  function tok(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#666"; }
+  function toast(msg) { var t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove("show"); }, 2200); }
+
+  /* ---------- タブ ---------- */
+  var mapInited = false;
+  document.querySelectorAll(".tabs button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".tabs button").forEach(function (x) { x.setAttribute("aria-selected", x === b ? "true" : "false"); });
+      document.querySelectorAll(".view").forEach(function (v) { v.classList.toggle("active", v.id === "view-" + b.dataset.view); });
+      if (b.dataset.view === "shops") { initMap(); if (map) setTimeout(function () { map.invalidateSize(); }, 50); }
+      if (b.dataset.view === "list") renderList();
+    });
+  });
+
+  /* ---------- 車種ガイド ---------- */
+  function licenseLimit(dateStr) {
+    if (!dateStr) return null;
+    var d = new Date(dateStr + "T00:00:00");
+    if (isNaN(d)) return null;
+    if (d < new Date("2007-06-02T00:00:00")) return { t: 8, label: "8t未満(中型8t限定)" };
+    if (d < new Date("2017-03-12T00:00:00")) return { t: 5, label: "5t未満(準中型5t限定)" };
+    return { t: 3.5, label: "3.5t未満" };
+  }
+  function renderTypes() {
+    var people = intIn("tPeople", 4, 1, 10);
+    var lic = licenseLimit($("tLicense").value);
+    $("tLicenseResult").innerHTML = lic ? "<strong>" + esc(lic.label) + "</strong>(最大積載量などの条件もあり)" : "取得日を入れると表示します";
+    $("typeCards").innerHTML = TYPES.map(function (t) {
+      var fit = people >= t.sleep[0] && people <= t.sleep[1];
+      var over = people > t.sleepMax;
+      var sleepBadge = fit ? '<span class="badge ok">人数ぴったり</span>' : over ? '<span class="badge ng">人数が多すぎ</span>' : people > t.sleep[1] ? '<span class="badge warn">工夫すれば寝られる</span>' : '<span class="badge info">広さに余裕あり</span>';
+      var licBadge = "";
+      if (lic) {
+        if (t.id === "trailer") licBadge = '<span class="badge warn">750kg超はけん引免許</span>';
+        else if (t.gvw < lic.t) licBadge = t.gvw > lic.t - 0.3 ? '<span class="badge warn">ぎりぎり・車検証で確認</span>' : '<span class="badge ok">運転できる見込み</span>';
+        else licBadge = '<span class="badge ng">この免許では難しい見込み</span>';
+      }
+      return '<article class="card' + (fit ? " fit" : "") + '">' +
+        "<h3>" + esc(t.name) + "</h3>" +
+        '<p class="base">' + esc(t.base) + "</p>" +
+        '<div class="row" style="margin-bottom:8px">' + sleepBadge + licBadge + "</div>" +
+        "<dl><dt>寝られる人数</dt><dd>" + t.sleep[0] + "〜" + t.sleep[1] + "人(最大" + t.sleepMax + "人程度)</dd>" +
+        "<dt>価格帯</dt><dd>" + esc(t.price) + "</dd>" +
+        "<dt>総重量の目安</dt><dd>" + (t.gvwNote ? esc(t.gvwNote) + " " : "") + "約" + t.gvw + "t(推論)</dd>" +
+        "<dt>免許</dt><dd>" + esc(t.license) + "</dd></dl>" +
+        "<ul>" + t.good.map(function (g) { return "<li>○ " + esc(g) + "</li>"; }).join("") +
+        t.bad.map(function (g) { return "<li>△ " + esc(g) + "</li>"; }).join("") + "</ul></article>";
+    }).join("");
+  }
+  $("tPeople").addEventListener("input", renderTypes);
+  $("tLicense").addEventListener("input", renderTypes);
+
+  /* ---------- 自作シミュレーター ---------- */
+  $("dBase").innerHTML = BASES.map(function (b) { return '<option value="' + b.id + '">' + esc(b.name) + "</option>"; }).join("");
+  $("dEquip").innerHTML = EQUIP.map(function (e) {
+    return '<label><input type="checkbox" data-eq="' + e.id + '"' + (e.def ? " checked" : "") + "> " + esc(e.name) + "</label>";
+  }).join("");
+
+  function applyBase() {
+    var b = BASES.filter(function (x) { return x.id === $("dBase").value; })[0];
+    $("dL").value = b.L; $("dW").value = b.W; $("dH").value = b.H;
+    $("dBaseNote").textContent = b.note + "(もともとの乗車定員 " + b.seats + "人)";
+    calc();
+  }
+  $("dBase").addEventListener("change", applyBase);
+  ["dL", "dW", "dH", "dRiders", "dAdults", "dKids", "dBed", "dNights", "dVehicle", "d8num"].forEach(function (id) {
+    $(id).addEventListener("input", calc);
+    $(id).addEventListener("change", calc);
+  });
+  $("dEquip").addEventListener("change", calc);
+
+  function equipOn(id) { var el = document.querySelector('[data-eq="' + id + '"]'); return el && el.checked; }
+
+  // 荷室に寝る場所が何人分とれるか(縦向き=進行方向に並べる前提)
+  // 大人用の列(180×50cm)を後ろ側に並べ、子ども(120×40cm)は空いた大人枠→余り幅→ベッド前の空きの順に入れる
+  function bedLayout(L, W, H, adults, kids, mode) {
+    var adultLen = 1800, adultW = 500, kidLen = 1200, kidW = 400;
+    var tiersMax = H >= 1200 ? 2 : 1; // 2段ベッドは上下に各60cm程度の空間が要る前提(推論)
+    var slotsAdult = L >= adultLen ? Math.floor(W / adultW) : 0;
+    var sideKidCols = slotsAdult > 0 ? Math.floor((W - slotsAdult * adultW) / kidW) : (L >= kidLen ? Math.floor(W / kidW) : 0);
+    var bedLen = slotsAdult > 0 ? adultLen : kidLen;
+    var frontKidCols = L - bedLen >= kidLen ? Math.floor(W / kidW) : 0;
+    function place(t) {
+      var capAdult = slotsAdult * t;
+      var k = kids;
+      var inAdult = Math.min(k, Math.max(0, capAdult - adults)); k -= inAdult;
+      var inSide = Math.min(k, sideKidCols * t); k -= inSide;
+      var inFront = Math.min(k, frontKidCols); k -= inFront; // ベッド前は1段のみ
+      return { ok: adults <= capAdult && k === 0, capAdult: capAdult, inAdult: inAdult, inSide: inSide, inFront: inFront };
+    }
+    var tiers = mode === "bunk" ? tiersMax : 1;
+    if (mode === "auto" && !place(1).ok && tiersMax === 2) tiers = 2;
+    var p = place(tiers);
+    var restLen = L - bedLen - (p.inFront > 0 ? kidLen : 0);
+    return { ok: p.ok, tiers: tiers, tiersMax: tiersMax, slotsAdult: slotsAdult, sideKidCols: sideKidCols, capAdult: p.capAdult,
+      inAdult: p.inAdult, inSide: p.inSide, inFront: p.inFront, restLen: restLen, anyBed: slotsAdult > 0 || sideKidCols > 0 };
+  }
+
+  function calc() {
+    var L = Math.max(0, num("dL", 0)), W = Math.max(0, num("dW", 0)), H = Math.max(0, num("dH", 0));
+    var riders = intIn("dRiders", 4, 1, 10), adults = intIn("dAdults", 2, 0, 8), kids = intIn("dKids", 2, 0, 8);
+    var nights = intIn("dNights", 2, 1, 7), vehicle = Math.max(0, num("dVehicle", 0));
+    var mode = $("dBed").value, want8 = $("d8num").checked;
+    var base = BASES.filter(function (x) { return x.id === $("dBase").value; })[0];
+    var sleepers = adults + kids;
+    var lay = bedLayout(L, W, H, adults, kids, mode);
+
+    var floorA = (L * W) / 1e6;            // 床面積 m²
+    var bedA = (adults * 0.9 + kids * 0.48); // 必要な寝床面積 m²
+    var footprint = Math.min(lay.tiers === 2 ? bedA / 2 : bedA, floorA);
+    var occupancy = floorA > 0 ? footprint / floorA : 0;
+
+    /* --- 判定 --- */
+    var checks = [];
+    function add(level, text) { checks.push({ level: level, text: text }); }
+    if (sleepers === 0) add("warn", "寝る人数が0人です。");
+    else if (lay.ok) add("ok", "寝る場所: 大人" + adults + "人・子ども" + kids + "人が" + (lay.tiers === 2 ? "2段ベッドで" : "1段で") + "収まります(大人用の列 " + lay.slotsAdult + "列)。");
+    else add("ng", "寝る場所が足りません。" + (L < 1800 ? "荷室長が1,800mmに足りないため大人が横になれません。助手席を倒す・後席を外すなど長さを確保する方法を検討してください。" : lay.tiersMax < 2 ? "荷室高が1,200mm未満のため2段ベッドは難しい見込みです(推論)。" : "2段にしても足りません。車を大きくするか、寝る人数を減らしてください。"));
+    if (lay.tiers === 2 && lay.ok) add("warn", "2段ベッドは上段の高さが低くなります(荷室高 " + H + "mm を上下で分ける)。子どもを上段にするのがおすすめ(推論)。");
+    if (!lay.ok) {} else if (lay.restLen >= 400 && lay.tiers === 1) add("ok", "ベッドの前に約" + Math.round(lay.restLen / 10) + "cmの空きがあり、キッチンや収納を置けます。");
+    else if (lay.restLen >= 400) add("ok", "2段ベッドの前に約" + Math.round(lay.restLen / 10) + "cmの空きがあります。");
+    else if (lay.ok && (equipOn("sink") || equipOn("fridge"))) add("warn", "ベッドの前にほとんど空きがありません。シンクや冷蔵庫はベッド下か、ベッドを跳ね上げ式にする必要があります。");
+    if (lay.ok && lay.inFront > 0) add("ok", "子ども" + lay.inFront + "人はベッドの前の空き(120×40cm)に寝床を作る計算です。");
+    if (riders > base.seats && base.id !== "custom") add("warn", "乗る人数(" + riders + "人)がこのベース車の乗車定員(" + base.seats + "人)を超えています。座席を増やす場合は構造変更の手続きと座席の安全基準を満たす必要があります。");
+    if (occupancy > 0.85) add("warn", "寝床が床の" + Math.round(occupancy * 100) + "%を占めます。昼間はベッドを畳めるようにすると過ごしやすくなります。");
+
+    var need8 = Math.max(1, Math.floor(riders / 3));
+    var sleep8 = adults + Math.floor(kids / 2);
+    var r8 = { ok: true, items: [] };
+    function r8add(ok, text) { if (!ok) r8.ok = false; r8.items.push({ ok: ok, text: text }); }
+    if (want8) {
+      r8add(sleep8 >= need8 && lay.ok, "就寝設備: 乗車定員" + riders + "人なら大人" + need8 + "人分以上が必要 → 計画では大人換算" + sleep8 + "人分" + (lay.ok ? "" : "(ただし寝る場所が収まっていない)") + "。座席を倒しただけのベッドは数えられません。");
+      r8add(equipOn("sink"), equipOn("sink") ? "水道設備: 給水・排水タンク各10L以上(材料リストに20Lタンクを2個入れています)。" : "水道設備: シンクと給排水タンク(各10L以上)が必要です。「シンク・給排水タンク」にチェックしてください。");
+      r8add(true, "炊事設備: コンロ等を置く調理台(材料リストの「キッチン台」)。詳細な要件は運輸支局で確認(要確認)。");
+      r8add(H >= 1200, H >= 1600 ? "室内高: 1,600mm以上あり要件を満たします。" : H >= 1200 ? "室内高: " + H + "mm。調理台を床から85cm以下にすれば1,200mm以上で可(2022年の緩和)。" : "室内高: " + H + "mm で1,200mmに届きません。ハイルーフやポップアップ屋根が必要です。");
+      r8.items.forEach(function (it) { add(it.ok ? "ok" : "ng", "【8ナンバー】" + it.text); });
+    }
+
+    /* --- 材料リスト --- */
+    var rows = [];
+    var lm = L / 1000, wm = W / 1000, hm = H / 1000;
+    var sheet = 0.91 * 1.82;
+    var beds = Math.max(0, adults + Math.ceil(kids / 2));
+    function row(group, key, name, basis, qty) { if (qty > 0) rows.push({ group: group, key: key, name: name, basis: basis, qty: qty, unit: price(key) }); }
+    var floorSheets = Math.ceil(floorA / sheet * 1.15);
+    var wallA = 2 * lm * hm + lm * wm + wm * hm; // 両側面+天井+後ろ側(推論の概算)
+    row("床・断熱", "plywood", "構造用合板12mm(910×1820)", "床面積" + floorA.toFixed(2) + "㎡ ÷ 1枚1.66㎡ ×1.15(切りしろ)", floorSheets);
+    if (equipOn("insul")) {
+      row("床・断熱", "floorInsul", "床下断熱材(押出法ポリスチレン20mm)", "床と同じ枚数", floorSheets);
+      row("床・断熱", "wallInsul", "壁・天井の断熱材(㎡)", "側面×2+天井+後面 ≒ " + wallA.toFixed(1) + "㎡", Math.ceil(wallA));
+      row("床・断熱", "reflect", "遮熱シート・アルミテープ(㎡)", "断熱面積と同じ", Math.ceil(wallA));
+      row("床・断熱", "damping", "制振シート", "一式", 1);
+    }
+    row("床・断熱", "wallBoard", "内装パネル(ベニヤ4mm+フェルト)", "断熱面積 ÷ 1.66㎡", Math.ceil(wallA / sheet));
+    var lumberPer = lay.tiers === 2 ? 14 : 8;
+    row("ベッド", "lumber", "ベッドの骨組み(2×4材 6ft)", "ベッド" + beds + "台 × " + lumberPer + "本" + (lay.tiers === 2 ? "(2段)" : ""), beds * lumberPer);
+    row("ベッド", "bedBoard", "ベッド天板(合板12mm)", "大人1人0.9㎡ → 1台1枚", beds);
+    row("ベッド", "mat", "ウレタンマット50mm(1人分)", "寝る人数分", sleepers);
+    if (lay.tiers === 2) row("ベッド", "bunkFrame", "2段ベッドの補強金具・転落防止柵", "上段の台数", Math.ceil(beds / 2));
+    row("ベッド", "hardware", "ビス・金具・接着剤", "一式", 1);
+    row("ベッド", "perBedHw", "ベッド固定金具(走行中にずれない固定)", "ベッド台数", beds);
+
+    // 電気
+    var loads = [{ n: "LED照明", w: 10, h: 5 }, { n: "スマホ充電", w: 15, h: 2 * Math.max(1, riders) }];
+    if (equipOn("fridge")) loads.push({ n: "ポータブル冷蔵庫(稼働率35%)", w: 45, h: 24 * 0.35 });
+    if (equipOn("fan")) loads.push({ n: "換気扇", w: 20, h: 6 });
+    if (equipOn("ff")) loads.push({ n: "FFヒーター(電気分)", w: 20, h: 8 });
+    if (equipOn("blanket")) loads.push({ n: "電気毛布×" + sleepers, w: 50 * sleepers, h: 6 });
+    if (equipOn("sink")) loads.push({ n: "給水ポンプ", w: 40, h: 0.3 });
+    var dailyWh = loads.reduce(function (s, l) { return s + l.w * l.h; }, 0);
+    var needWh = equipOn("battery") ? Math.ceil(dailyWh * nights / 0.8 / 100) * 100 : 0; // 放電深度80%で計算
+    var peakW = loads.reduce(function (s, l) { return s + l.w; }, 0);
+    if (equipOn("battery")) row("電装", "battery", "サブバッテリー(リン酸鉄)容量 Wh", "1日" + Math.round(dailyWh) + "Wh × " + nights + "泊 ÷ 0.8", needWh);
+    if (equipOn("inverter")) row("電装", "inverter", "インバーター(正弦波 " + (peakW * 1.3 > 1000 ? "1500W" : "1000W") + ")", "同時に使う最大" + peakW + "W × 1.3", 1);
+    if (equipOn("dcdc")) row("電装", "dcdc", "走行充電器", "一式", 1);
+    if (equipOn("solar")) {
+      var panels = Math.max(1, Math.min(Math.floor(wm * lm / 0.6), Math.ceil(dailyWh / 400)));
+      row("電装", "solarPanel", "ソーラーパネル100W", "1日の消費 ÷ 1枚あたり約400Wh(晴天時・推論)", panels);
+      row("電装", "mppt", "ソーラー用チャージコントローラー(MPPT)", "一式", 1);
+    }
+    if (equipOn("battery") || equipOn("inverter") || equipOn("solar")) row("電装", "wiring", "配線・ヒューズ・ブレーカー", "一式", 1);
+
+    if (equipOn("sink")) {
+      row("水回り・キッチン", "tank", "給水・排水タンク20L", "8ナンバーは各10L以上", 2);
+      row("水回り・キッチン", "sink", "シンク・水栓", "一式", 1);
+      row("水回り・キッチン", "pump", "電動給水ポンプ", "一式", 1);
+    }
+    if (equipOn("sink") || want8) row("水回り・キッチン", "kitchen", "キッチン台(調理台85cm以下)", "家具1台分の材料", 1);
+    if (equipOn("fridge")) row("快適装備", "fridge", "ポータブル冷蔵庫", "", 1);
+    if (equipOn("fan")) row("快適装備", "fan", "ルーフベント(換気扇)", "屋根の穴あけ・防水込みの部材", 1);
+    if (equipOn("ff")) row("快適装備", "ff", "FFヒーター", "国内正規品と輸入品で価格差が大きい(推論)", 1);
+    if (equipOn("blanket")) row("快適装備", "blanket", "電気毛布", "寝る人数分", sleepers);
+    if (equipOn("curtain")) row("快適装備", "curtain", "カーテン・窓の目隠し", "窓の数(約6枚・推論)", 6);
+    if (want8) row("手続き", "register", "構造変更の検査・書類代行など(推論)", "自分で手続きすればもっと安い", 1);
+
+    var material = rows.reduce(function (s, r) { return s + r.qty * r.unit; }, 0);
+    var total = material + vehicle;
+
+    lastResult = {
+      base: base.name, L: L, W: W, H: H, riders: riders, adults: adults, kids: kids, sleepers: sleepers,
+      layOk: lay.ok, tiers: lay.tiers, want8: want8, ok8: want8 ? r8.ok : null, material: material, vehicle: vehicle, total: total
+    };
+
+    /* --- 描画 --- */
+    $("dKpis").innerHTML =
+      kpi("床面積", floorA.toFixed(2) + "<small> ㎡</small>") +
+      kpi("寝床に必要な面積", bedA.toFixed(2) + "<small> ㎡" + (lay.tiers === 2 && lay.ok ? "(2段なので床はこの約半分)" : "") + "</small>") +
+      kpi("大人が寝られる最大", lay.capAdult + "<small> 人分</small>") +
+      kpi("材料・装備費", man(material)) +
+      kpi("総額(車両込み)", man(total));
+    $("dChecks").innerHTML = checks.map(function (c) {
+      var lbl = { ok: "OK", warn: "注意", ng: "NG" }[c.level];
+      return '<li><span class="badge ' + c.level + '">' + lbl + "</span><span>" + esc(c.text) + "</span></li>";
+    }).join("");
+    renderPlan(L, W, adults, kids, lay);
+
+    var tb = "", lastGroup = "";
+    rows.forEach(function (r, i) {
+      if (r.group !== lastGroup) { tb += '<tr class="group"><td colspan="5">' + esc(r.group) + "</td></tr>"; lastGroup = r.group; }
+      tb += "<tr><td>" + esc(r.name) + '</td><td class="note">' + esc(r.basis) + '</td><td class="num">' + r.qty.toLocaleString("ja-JP") +
+        '</td><td class="num"><input type="number" min="0" step="any" data-price="' + r.key + '" value="' + r.unit + '" aria-label="' + esc(r.name) + 'の単価"></td><td class="num">' + yen(r.qty * r.unit) + "</td></tr>";
+    });
+    $("dMaterials").querySelector("tbody").innerHTML = tb;
+    $("dMaterials").querySelector("tfoot").innerHTML =
+      '<tr><td colspan="4">材料・装備費の合計</td><td class="num">' + yen(material) + "</td></tr>" +
+      (vehicle > 0 ? '<tr><td colspan="4">ベース車を含めた総額</td><td class="num">' + yen(total) + "</td></tr>" : "");
+    $("dPower").innerHTML = "1日の消費電力 約" + Math.round(dailyWh) + "Wh(" + loads.map(function (l) { return esc(l.n) + " " + Math.round(l.w * l.h) + "Wh"; }).join("、") + ")。" +
+      (equipOn("battery") ? "<br>" + nights + "泊分を充電なしでまかなうには、リン酸鉄バッテリー約" + needWh + "Wh(12.8Vで約" + Math.round(needWh / 12.8) + "Ah)が目安です。放電深度80%で計算しています(推論)。" : "");
+  }
+  function kpi(k, v) { return '<div class="kpi"><div class="k">' + esc(k) + '</div><div class="v">' + v + "</div></div>"; }
+
+  // 単価の書き換え(フォーカスが外れたら再計算し、入力中の値が飛ばないようにする)
+  $("dMaterials").addEventListener("change", function (e) {
+    var key = e.target.getAttribute("data-price");
+    if (!key) return;
+    var v = parseFloat(e.target.value);
+    if (isFinite(v) && v >= 0) priceOverride[key] = v; else delete priceOverride[key];
+    calc();
+  });
+
+  // 荷室の平面図(上から見た図)。前=左、後ろ=右
+  function renderPlan(L, W, adults, kids, lay) {
+    if (L <= 0 || W <= 0) { $("dPlan").innerHTML = '<p class="empty">荷室寸法を入れてください</p>'; return; }
+    var pad = 24, scale = 360 / Math.max(L, 1);
+    var vw = L * scale + pad * 2, vh = W * scale + pad * 2 + 18;
+    var s = '<svg viewBox="0 0 ' + vw.toFixed(0) + " " + vh.toFixed(0) + '" role="img" aria-label="荷室の平面図">';
+    s += '<rect x="' + pad + '" y="' + pad + '" width="' + (L * scale).toFixed(1) + '" height="' + (W * scale).toFixed(1) + '" class="p-room" rx="4"/>';
+    s += '<text x="' + pad + '" y="' + (pad - 8) + '" >← 前(運転席側)   荷室 ' + L + "×" + W + "mm</text>";
+    function bed(x, y, len, wid, label, kid) {
+      s += '<rect x="' + (pad + x * scale + 1).toFixed(1) + '" y="' + (pad + y * scale + 2).toFixed(1) + '" width="' + (len * scale - 2).toFixed(1) + '" height="' + (wid * scale - 4).toFixed(1) +
+        '" class="' + (kid ? "p-kid" : "p-bed") + '" rx="3"/>';
+      s += '<text x="' + (pad + (x + len / 2) * scale).toFixed(1) + '" y="' + (pad + (y + wid / 2) * scale + 4).toFixed(1) + '" class="' + (kid ? "t-kid" : "t-bed") + '">' + label + "</text>";
+    }
+    var t = lay.tiers, a = Math.min(adults, lay.capAdult), ka = lay.inAdult, ks = lay.inSide, kf = lay.inFront;
+    var bedLen = lay.slotsAdult > 0 ? 1800 : 1200, x0 = L - bedLen, y = 0;
+    // 大人用の列(各列 t 段)。大人を先に、空いた段に子ども
+    for (var c = 0; c < lay.slotsAdult; c++) {
+      var who = [];
+      for (var i = 0; i < t; i++) { if (a > 0) { who.push("大人"); a--; } else if (ka > 0) { who.push("子"); ka--; } }
+      if (!who.length) break;
+      bed(x0, y, 1800, 500, who.join("/"), who.indexOf("大人") < 0);
+      y += 500;
+    }
+    // 余り幅の子ども列
+    while (ks > 0 && y + 400 <= W) {
+      var n = Math.min(t, ks); ks -= n;
+      bed(L - 1200, y, 1200, 400, n > 1 ? "子/子" : "子", true);
+      y += 400;
+    }
+    // ベッド前の子ども(1段)
+    for (var f = 0; f < kf; f++) bed(x0 - 1200, f * 400, 1200, 400, "子", true);
+    if (lay.ok && lay.restLen >= 400) {
+      s += '<rect x="' + (pad + 4) + '" y="' + (pad + 4) + '" width="' + (lay.restLen * scale - 8).toFixed(1) + '" height="' + (Math.min(W, 450) * scale - 8).toFixed(1) + '" class="p-kitchen" rx="3"/>';
+      s += '<text x="' + (pad + 8) + '" y="' + (pad + 18) + '" class="t-kitchen">キッチン・収納</text>';
+    }
+    var placed = Math.min(adults, lay.capAdult) + lay.inAdult + lay.inSide + lay.inFront;
+    var unplaced = adults + kids - placed;
+    s += '<text x="' + pad + '" y="' + (vh - 6).toFixed(0) + '"' + (unplaced > 0 ? ' class="t-ng"' : "") + '>' +
+      (unplaced > 0 ? "置ききれない: " + unplaced + "人" : "すべての寝床を配置済み") + (t === 2 ? "(「A/B」は上下の2段)" : "") + "</text>";
+    s += "</svg>";
+    $("dPlan").innerHTML = s;
+  }
+
+  $("dSave").addEventListener("click", function () {
+    calc();
+    var name = $("dName").value.trim() || ("案" + (saved.length + 1));
+    var r = Object.assign({ id: Date.now() + Math.random(), name: name }, lastResult);
+    saved.push(r);
+    $("dName").value = "";
+    $("listCount").textContent = saved.length;
+    toast("「" + name + "」を計算結果リストに追加しました");
+  });
+
+  /* ---------- 計算結果リスト ---------- */
+  function sortedSaved() {
+    var key = $("lSort").value, arr = saved.slice();
+    if (key === "total") arr.sort(function (a, b) { return a.total - b.total; });
+    if (key === "material") arr.sort(function (a, b) { return a.material - b.material; });
+    if (key === "sleep") arr.sort(function (a, b) { return b.sleepers - a.sleepers || a.total - b.total; });
+    return arr;
+  }
+  function renderList() {
+    var arr = sortedSaved();
+    if (!arr.length) { $("lBody").innerHTML = '<tr><td colspan="8" class="empty">まだありません。自作シミュレーターで条件を決めて「計算結果リストに追加」を押してください。</td></tr>'; return; }
+    var minTotal = Math.min.apply(null, arr.map(function (r) { return r.total; }));
+    $("lBody").innerHTML = arr.map(function (r) {
+      return "<tr><td><strong>" + esc(r.name) + "</strong></td><td>" + esc(r.base) + '<br><span class="note">' + r.L + "×" + r.W + "×" + r.H + "mm</span></td>" +
+        '<td class="num">' + r.riders + "人 / " + r.sleepers + "人<br><span class=\"note\">大人" + r.adults + "・子" + r.kids + "</span></td>" +
+        "<td>" + (r.layOk ? '<span class="badge ok">収まる</span>' : '<span class="badge ng">足りない</span>') + (r.tiers === 2 ? ' <span class="note">2段</span>' : "") + "</td>" +
+        "<td>" + (r.want8 ? (r.ok8 ? '<span class="badge ok">要件OK</span>' : '<span class="badge ng">未達あり</span>') : '<span class="note">目指さない</span>') + "</td>" +
+        '<td class="num">' + yen(r.material) + '</td><td class="num">' + (r.total === minTotal && arr.length > 1 ? '<span class="badge ok">最安</span> ' : "") + yen(r.total) +
+        (r.vehicle > 0 ? '<br><span class="note">車両 ' + man(r.vehicle) + "</span>" : "") + "</td>" +
+        '<td><button class="small" data-del="' + r.id + '" aria-label="' + esc(r.name) + 'を削除">削除</button></td></tr>';
+    }).join("");
+  }
+  $("lSort").addEventListener("change", renderList);
+  // 削除は2回押しで確定(1回目でボタンが「もう一度押すと削除」に変わる)
+  $("lBody").addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-del]");
+    if (!btn) return;
+    if (!btn.classList.contains("confirming")) {
+      btn.classList.add("confirming"); btn.textContent = "もう一度押すと削除";
+      setTimeout(function () { if (btn.isConnected) { btn.classList.remove("confirming"); btn.textContent = "削除"; } }, 3000);
+      return;
+    }
+    var id = btn.getAttribute("data-del");
+    var r = saved.filter(function (x) { return String(x.id) === id; })[0];
+    if (!r) return;
+    saved = saved.filter(function (x) { return x !== r; });
+    $("listCount").textContent = saved.length;
+    renderList();
+    toast("「" + r.name + "」を削除しました");
+  });
+  $("lCopy").addEventListener("click", function () {
+    if (!saved.length) { toast("リストが空です"); return; }
+    var head = ["案の名前", "ベース車", "荷室長", "荷室幅", "荷室高", "乗車", "大人", "子ども", "寝る場所", "8ナンバー", "材料・装備費", "車両", "総額"];
+    var lines = [head.join("\t")].concat(sortedSaved().map(function (r) {
+      return [r.name, r.base, r.L, r.W, r.H, r.riders, r.adults, r.kids, r.layOk ? "収まる" : "足りない", r.want8 ? (r.ok8 ? "OK" : "未達") : "-", Math.round(r.material), Math.round(r.vehicle), Math.round(r.total)].join("\t");
+    }));
+    var text = lines.join("\n");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast("コピーしました。表計算ソフトに貼り付けできます"); }, function () { toast("コピーできませんでした(ブラウザの権限を確認してください)"); });
+    } else toast("このブラウザではコピーに対応していません");
+  });
+
+  /* ---------- 制作依頼先マップ ---------- */
+  var map = null, markerLayer = null, originMarker = null, origin = null, markers = [];
+  function distKm(a, b) {
+    var R = 6371, toR = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * toR, dLng = (b.lng - a.lng) * toR;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * toR) * Math.cos(b.lat * toR) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+  function filteredShops() {
+    var a = $("sArea").value, k = $("sKind").value, t = $("sType").value;
+    var arr = SHOPS.filter(function (s) {
+      return (!a || s.area === a) && (!k || s.kind === k) && (!t || s.types.indexOf(t) >= 0);
+    });
+    if (origin) arr = arr.map(function (s) { return Object.assign({}, s, { d: distKm(origin, s) }); }).sort(function (x, y) { return x.d - y.d; });
+    return arr;
+  }
+  function popupHtml(s) {
+    return "<strong>" + esc(s.name) + "</strong><br>" + esc(s.pref + s.city) + "<br>" + esc(s.kindLabel) +
+      (s.types.length ? "/" + esc(s.types.join("・")) : "") + (s.note ? "<br>" + esc(s.note) : "") +
+      (s.d != null ? "<br>基準地点から約" + Math.round(s.d) + "km(直線)" : "");
+  }
+  function renderShops() {
+    var arr = filteredShops();
+    $("sCount").textContent = arr.length + "件";
+    $("sBody").innerHTML = arr.length ? arr.map(function (s) {
+      return '<tr data-shop="' + esc(s.name) + '"><td><strong>' + esc(s.name) + "</strong>" + (s.note ? '<br><span class="note">' + esc(s.note) + "</span>" : "") + "</td><td>" + esc(s.pref) + "<br>" + esc(s.city) + "</td><td>" +
+        '<span class="badge ' + (s.kind === "build" ? "info" : "warn") + '">' + esc(s.kindLabel) + "</span></td><td>" + (s.types.length ? esc(s.types.join("・")) : '<span class="note">未確認</span>') +
+        '</td><td class="num">' + (s.d != null ? Math.round(s.d) + "km" : "-") + '</td><td><a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.src) + "</a></td></tr>";
+    }).join("") : '<tr><td colspan="6" class="empty">条件に合う依頼先がありません</td></tr>';
+    if (map) {
+      markerLayer.clearLayers(); markers = [];
+      arr.forEach(function (s) {
+        var col = s.kind === "build" ? tok("--accent") : tok("--other");
+        var m = L.circleMarker([s.lat, s.lng], { radius: 8, color: col, fillColor: col, fillOpacity: 0.75, weight: 2 }).bindPopup(popupHtml(s));
+        m.bindTooltip(s.name, { direction: "top", offset: [0, -6] });
+        m.addTo(markerLayer); markers.push({ name: s.name, m: m });
+      });
+    }
+  }
+  function initMap() {
+    if (mapInited) return;
+    mapInited = true;
+    if (typeof L === "undefined") { $("map").style.display = "none"; $("mapFallback").style.display = "block"; renderShops(); return; }
+    map = L.map("map", { scrollWheelZoom: false }).setView([36.2, 137.5], 5);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+    markerLayer = L.layerGroup().addTo(map);
+    map.on("click", function (e) {
+      origin = { lat: e.latlng.lat, lng: e.latlng.lng };
+      if (originMarker) originMarker.setLatLng(e.latlng);
+      else originMarker = L.circleMarker(e.latlng, { radius: 7, color: tok("--ok"), fillColor: tok("--ok"), fillOpacity: 0.9, weight: 2 }).addTo(map).bindTooltip("基準地点");
+      $("sOrigin").innerHTML = "基準地点: " + origin.lat.toFixed(3) + ", " + origin.lng.toFixed(3) + ' <button class="small" id="sClear">解除</button>';
+      renderShops();
+    });
+    renderShops();
+  }
+  $("sOrigin").addEventListener("click", function (e) {
+    if (e.target.id !== "sClear") return;
+    origin = null;
+    if (originMarker) { map.removeLayer(originMarker); originMarker = null; }
+    $("sOrigin").textContent = "基準地点: 未設定(地図をクリック)";
+    renderShops();
+  });
+  ["sArea", "sKind", "sType"].forEach(function (id) {
+    $(id).addEventListener("change", function () {
+      renderShops();
+      if (map && markers.length) {
+        var g = L.featureGroup(markers.map(function (x) { return x.m; }));
+        map.fitBounds(g.getBounds().pad(0.3), { maxZoom: 9 });
+      }
+    });
+  });
+  $("sBody").addEventListener("click", function (e) {
+    if (e.target.closest("a")) return;
+    var tr = e.target.closest("tr[data-shop]");
+    if (!tr || !map) return;
+    var hit = markers.filter(function (x) { return x.name === tr.getAttribute("data-shop"); })[0];
+    if (hit) { map.setView(hit.m.getLatLng(), 10); hit.m.openPopup(); $("map").scrollIntoView({ behavior: "smooth", block: "center" }); }
+  });
+
+  /* ---------- 初期表示 ---------- */
+  renderTypes();
+  applyBase();
+  renderShops();
+})();
+</script>
+</body>
+</html>
