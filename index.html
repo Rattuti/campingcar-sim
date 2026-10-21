@@ -84,6 +84,10 @@
   .badge.warn { background: var(--warn-soft); color: var(--warn); }
   .badge.ng { background: var(--ng-soft); color: var(--ng); }
   .badge.info { background: var(--accent-soft); color: var(--accent-dark); }
+  .card .watch-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .card .watch-actions a { font-size: 0.82rem; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; text-decoration: none; background: var(--panel-soft); }
+  .card .watch-actions a:hover { border-color: var(--accent); }
+  .card .freq { font-size: 0.76rem; color: var(--muted); }
   /* 結果 */
   .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
   .kpi { background: var(--panel-soft); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
@@ -147,6 +151,7 @@
     <button role="tab" aria-selected="false" data-view="diy">自作シミュレーター</button>
     <button role="tab" aria-selected="false" data-view="shops">制作依頼先マップ</button>
     <button role="tab" aria-selected="false" data-view="list">計算結果リスト<span class="count" id="listCount">0</span></button>
+    <button role="tab" aria-selected="false" data-view="watch">情報チェック</button>
     <button role="tab" aria-selected="false" data-view="info">情報源</button>
   </nav>
 
@@ -309,6 +314,16 @@
         </table>
       </div>
     </div>
+  </section>
+
+  <!-- ===== 情報チェック ===== -->
+  <section class="view" id="view-watch">
+    <div class="panel">
+      <h2>情報チェック</h2>
+      <p class="desc">新型車・展示会・法改正・相場など、定期的に見直したい項目と調べ先をまとめました。「最近1か月で検索」はGoogle検索を新しいタブで開き、直近1か月の記事だけを出します。見終わったら「確認した」を押すと、このページを開いている間だけ確認日が残ります(閉じると消えます)。</p>
+      <div class="row" style="margin-bottom:4px"><span class="note" id="wSummary"></span></div>
+    </div>
+    <div class="cards" id="watchCards"></div>
   </section>
 
   <!-- ===== 情報源 ===== -->
@@ -873,10 +888,59 @@
     if (hit) { map.setView(hit.m.getLatLng(), 10); hit.m.openPopup(); $("map").scrollIntoView({ behavior: "smooth", block: "center" }); }
   });
 
+  /* ---------- 情報チェック ---------- */
+  // q=検索語、links=公式など直接見る先。頻度は目安
+  var WATCH = [
+    { id: "new", title: "新型車・新モデル", freq: "月1回", why: "各社の新しいモデルや価格の改定は、車種ガイドの価格帯を見直す材料になります。",
+      points: ["軽キャンパー・バンコンの新モデルと価格", "ベース車(ハイエース等)のモデルチェンジや受注停止"], q: ["キャンピングカー 新型 発表", "ハイエース キャンピングカー 新モデル 価格"] },
+    { id: "show", title: "展示会・ショー(関西)", freq: "月1回", why: "実車を見て寝床の広さや高さを体感できる機会です。各社のビルダーに直接相談もできます。",
+      points: ["開催日・会場・入場料", "出展するビルダー(マップの会社が出るか)"], q: ["キャンピングカーショー 関西 2026", "キャンピングカー フェア 大阪 京都 奈良"], links: [{ t: "日本RV協会", u: "https://www.jrva.com/" }] },
+    { id: "law", title: "法令(8ナンバー・構造変更)", freq: "3か月に1回", why: "自作シミュレーターの8ナンバー判定は2022年4月の改正内容が前提です。変わったら判定を直す必要があります。",
+      points: ["キャンピング車の構造要件の改正", "構造変更検査の手続きの変更"], q: ["8ナンバー キャンピング車 構造要件 改正", "キャンピング車 構造要件 国土交通省 通達"], links: [{ t: "国土交通省 特種用途自動車", u: "https://www.mlit.go.jp/jidosha/kensatoroku/kensa/kns07_2.htm" }] },
+    { id: "license", title: "免許・けん引のルール", freq: "3か月に1回", why: "車種ガイドの「運転できる総重量」の判定に使っています。",
+      points: ["普通免許・準中型免許の区分の変更", "けん引免許(750kg)の扱いの変更"], q: ["普通免許 車両総重量 改正 キャンピングカー", "けん引免許 750kg 改正"] },
+    { id: "used", title: "中古相場", freq: "月1回", why: "完成車を中古で買う場合と、自作した場合の総額を比べる材料になります。",
+      points: ["バンコン・キャブコン・軽キャンパーの中古価格帯", "ベース車(ハイエース等)の中古価格"], q: ["中古 キャンピングカー 相場 2026", "ハイエース 中古 相場 2026"] },
+    { id: "parts", title: "DIY部材・電装の価格", freq: "月1回", why: "材料リストの単価は目安なので、ここで調べた値で書き換えると見積もりの精度が上がります。",
+      points: ["リン酸鉄バッテリー(100Ahクラス)の価格", "インバーター・走行充電器・FFヒーターの価格", "合板・断熱材の価格"], q: ["リン酸鉄 リチウム サブバッテリー 100Ah 価格", "キャンピングカー 走行充電器 価格 比較", "FFヒーター 車中泊 価格"] },
+    { id: "builder", title: "依頼先(関西のビルダー)", freq: "3か月に1回", why: "マップに載っていない関西の製作・持ち込み架装の店を見つけるためです。",
+      points: ["持ち込み架装・セミオーダーに対応しているか", "8ナンバーの構造変更まで任せられるか"], q: ["キャンピングカー 製作 持ち込み架装 大阪", "キャンピングカー ビルダー 奈良 京都 製作"] },
+    { id: "rvpark", title: "RVパーク・車中泊スポット(関西)", freq: "3か月に1回", why: "泊まれる場所が増えると、連泊日数やバッテリー容量の前提が変わります。",
+      points: ["関西の新しいRVパーク", "電源が使えるか・料金"], q: ["RVパーク 新規 オープン 関西", "RVパーク 電源 奈良 大阪"], links: [{ t: "日本RV協会", u: "https://www.jrva.com/" }] }
+  ];
+  var watchDone = {};
+  function gsearch(q) { return "https://www.google.com/search?tbs=qdr:m&q=" + encodeURIComponent(q); }
+  function renderWatch() {
+    var done = Object.keys(watchDone).length;
+    $("wSummary").textContent = "このページで確認済み: " + done + " / " + WATCH.length + "項目";
+    $("watchCards").innerHTML = WATCH.map(function (w) {
+      var d = watchDone[w.id];
+      return '<article class="card"><div class="row" style="justify-content:space-between"><h3>' + esc(w.title) + "</h3>" +
+        (d ? '<span class="badge ok">' + esc(d) + " 確認</span>" : '<span class="badge info">未確認</span>') + "</div>" +
+        '<p class="freq">目安: ' + esc(w.freq) + "</p>" +
+        '<p class="note" style="margin:4px 0 6px">' + esc(w.why) + "</p>" +
+        "<ul>" + w.points.map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") + "</ul>" +
+        '<div class="watch-actions">' +
+        w.q.map(function (q) { return '<a href="' + gsearch(q) + '" target="_blank" rel="noopener">最近1か月で検索: ' + esc(q) + "</a>"; }).join("") +
+        (w.links || []).map(function (l) { return '<a href="' + esc(l.u) + '" target="_blank" rel="noopener">' + esc(l.t) + "</a>"; }).join("") +
+        "</div>" +
+        '<div style="margin-top:10px"><button class="small" data-watch="' + w.id + '">' + (d ? "確認を取り消す" : "確認した") + "</button></div></article>";
+    }).join("");
+  }
+  $("watchCards").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-watch]");
+    if (!b) return;
+    var id = b.getAttribute("data-watch");
+    if (watchDone[id]) delete watchDone[id];
+    else { var t = new Date(); watchDone[id] = (t.getMonth() + 1) + "/" + t.getDate(); }
+    renderWatch();
+  });
+
   /* ---------- 初期表示 ---------- */
   renderTypes();
   applyBase();
   renderShops();
+  renderWatch();
 })();
 </script>
 </body>
