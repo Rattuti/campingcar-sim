@@ -125,6 +125,14 @@
   .stay-link:hover { border-color: var(--accent); }
   .stay-link.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
   .gmap-links a { font-size: 0.8rem; margin-right: 8px; white-space: nowrap; }
+  .map-box { height: 440px; border-radius: 8px; border: 1px solid var(--border); }
+  .care-item { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px dashed var(--border); font-size: 0.88rem; }
+  .care-item:last-child { border-bottom: 0; }
+  .care-item input { width: 20px; height: 20px; margin-top: 2px; flex: 0 0 auto; }
+  .care-item .why { color: var(--muted); font-size: 0.8rem; }
+  .care-item .acts a { font-size: 0.8rem; margin-right: 10px; }
+  .care-item.done .ttl { text-decoration: line-through; color: var(--muted); }
+  @media (max-width: 560px) { .map-box { height: 340px; } }
   /* 地図 */
   #map { height: 440px; border-radius: 8px; border: 1px solid var(--border); }
   .map-fallback { display: none; padding: 20px; text-align: center; color: var(--muted); background: var(--panel-soft); border-radius: 8px; }
@@ -156,6 +164,7 @@
     <button role="tab" aria-selected="false" data-view="diy">自作シミュレーター</button>
     <button role="tab" aria-selected="false" data-view="shops">制作依頼先マップ</button>
     <button role="tab" aria-selected="false" data-view="stay">泊まる場所</button>
+    <button role="tab" aria-selected="false" data-view="care">点検・備品</button>
     <button role="tab" aria-selected="false" data-view="list">計算結果リスト<span class="count" id="listCount">0</span></button>
     <button role="tab" aria-selected="false" data-view="watch">情報チェック</button>
     <button role="tab" aria-selected="false" data-view="info">情報源</button>
@@ -302,6 +311,23 @@
   <!-- ===== 泊まる場所 ===== -->
   <section class="view" id="view-stay">
     <div class="panel">
+      <h2>泊まる場所の地図</h2>
+      <p class="desc">表示している範囲のRVパーク・キャンプ場・道の駅を読み込んで点で示します。データはOpenStreetMap(誰でも編集できる地図)なので、抜けや古い情報があります。特にRVパークは登録が少ないので、下の公式検索も使ってください。</p>
+      <div class="row" style="margin-bottom:6px">
+        <label class="row" style="gap:4px"><input type="checkbox" id="lyRv" checked><span class="dot" style="background:var(--accent)"></span>RVパーク <span class="note" id="cntRv"></span></label>
+        <label class="row" style="gap:4px"><input type="checkbox" id="lyCamp" checked><span class="dot" style="background:var(--kid)"></span>キャンプ場 <span class="note" id="cntCamp"></span></label>
+        <label class="row" style="gap:4px"><input type="checkbox" id="lyMichi" checked><span class="dot" style="background:var(--warn)"></span>道の駅 <span class="note" id="cntMichi"></span></label>
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <button class="primary" id="stayLoad">この範囲を読み込む</button>
+        <button id="stayHere">現在地へ移動</button>
+        <span class="note" id="stayStatus" role="status">地図を開くと関西周辺を読み込みます。</span>
+      </div>
+      <div id="stayMap" class="map-box"></div>
+      <div class="map-fallback" id="stayMapFallback">地図を読み込めませんでした(オフラインの可能性があります)。下のGoogleマップ検索と公式サイトは使えます。</div>
+      <p class="note" style="margin-top:6px">地図データ: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>(ODbL)。点の「キャンプ場」は車の乗り入れができない所も含みます。</p>
+    </div>
+    <div class="panel">
       <h2>泊まる場所をGoogleマップで探す</h2>
       <p class="desc">地名を入れてボタンを押すと、Googleマップで検索結果を開きます。地名が空のときは、Googleマップが表示中の地図や現在地の周りを探します。料金や空きは施設ごとに変わるので、予約前に公式の情報で確かめてください。</p>
       <div class="row">
@@ -337,6 +363,17 @@
       </ul>
       <p class="note">RVパーク公式サイトの利用規約は掲載内容の複製や二次利用を禁止しているため、このアプリには施設のデータを載せず、検索リンクで連携しています。</p>
     </div>
+  </section>
+
+  <!-- ===== 点検・備品 ===== -->
+  <section class="view" id="view-care">
+    <div class="panel">
+      <h2>点検・備品チェックリスト</h2>
+      <p class="desc">YouTubeチャンネル「<a href="https://www.youtube.com/@kupiochannel" target="_blank" rel="noopener">クピオちゃんねる</a>」の動画14本で実際に起きたトラブルや、使っていた道具をもとにまとめました。各項目の「動画」から元の場面を確かめられます。チェックはページを閉じると消えます。定期の項目は、Googleカレンダーに繰り返しの予定として入れておくと忘れません。</p>
+      <div class="kpis" id="careKpis"></div>
+    </div>
+    <div class="cards" id="careList"></div>
+    <p class="note">点検の間隔は動画で語られた内容です。「(推論)」と付けたものは動画で間隔が示されていないため、こちらで置いた目安です。車種や装備の説明書の指示を優先してください。</p>
   </section>
 
   <!-- ===== 計算結果リスト ===== -->
@@ -525,6 +562,7 @@
       document.querySelectorAll(".tabs button").forEach(function (x) { x.setAttribute("aria-selected", x === b ? "true" : "false"); });
       document.querySelectorAll(".view").forEach(function (v) { v.classList.toggle("active", v.id === "view-" + b.dataset.view); });
       if (b.dataset.view === "shops") { initMap(); if (map) setTimeout(function () { map.invalidateSize(); }, 50); }
+      if (b.dataset.view === "stay") initStayMap();
       if (b.dataset.view === "list") renderList();
     });
   });
@@ -1021,6 +1059,196 @@
   $("routeFrom").addEventListener("input", renderRoute);
   $("routeTo").addEventListener("input", renderRoute);
 
+  /* ---------- 泊まる場所の地図(OpenStreetMap / Overpass API) ---------- */
+  var stayMap = null, stayLayer = null, stayData = [], stayInited = false, stayBusy = false;
+  var STAY_COLORS = { rv: "--accent", camp: "--kid", michi: "--warn" };
+  var STAY_LABEL = { rv: "RVパーク", camp: "キャンプ場", michi: "道の駅" };
+  function classifyOsm(t) {
+    var name = t.name || "";
+    if (/RVパーク|ＲＶパーク/i.test(name) || t.tourism === "caravan_site") return /RVパーク|ＲＶパーク/i.test(name) ? "rv" : "camp";
+    if (t.tourism === "camp_site") return "camp";
+    if (/^道の駅/.test(name) && !t.public_transport && t.highway !== "bus_stop") return "michi";
+    return null;
+  }
+  function stayQuery(b) {
+    var bb = "(" + [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map(function (v) { return v.toFixed(4); }).join(",") + ")";
+    return "[out:json][timeout:25];(" +
+      'nwr["tourism"~"^(camp_site|caravan_site)$"]' + bb + ";" +
+      'nwr["name"~"RVパーク|ＲＶパーク"]' + bb + ";" +
+      'nwr["name"~"^道の駅"]["highway"~"^(services|rest_area)$"]' + bb + ";" +
+      'nwr["name"~"^道の駅"]["amenity"="parking"]' + bb + ";" +
+      ");out center tags 600;";
+  }
+  function parseOsm(json) {
+    var seenMichi = {}, out = [];
+    (json.elements || []).forEach(function (e) {
+      var t = e.tags || {}, kind = classifyOsm(t);
+      var lat = e.lat != null ? e.lat : e.center && e.center.lat, lng = e.lon != null ? e.lon : e.center && e.center.lon;
+      if (!kind || lat == null || lng == null) return;
+      if (kind === "michi") {
+        var key = (t.name || "").replace(/\s|　/g, "");
+        if (seenMichi[key]) return;
+        seenMichi[key] = true;
+      }
+      out.push({ kind: kind, name: t.name || STAY_LABEL[kind] + "(名前なし)", lat: lat, lng: lng, tags: t, osm: e.type + "/" + e.id });
+    });
+    return out;
+  }
+  function stayPopup(p) {
+    var t = p.tags, info = [];
+    if (t.power_supply === "yes") info.push("電源あり");
+    if (t.toilets === "yes") info.push("トイレあり");
+    if (t.fee === "no") info.push("無料と登録"); else if (t.fee === "yes") info.push("有料");
+    if (t.caravans === "yes" || t.motorhome === "yes") info.push("キャンピングカー可と登録");
+    var ll = p.lat.toFixed(6) + "," + p.lng.toFixed(6);
+    var web = /^https?:\/\//.test(t.website || t["contact:website"] || "") ? (t.website || t["contact:website"]) : "";
+    return "<strong>" + esc(p.name) + "</strong><br>" + esc(STAY_LABEL[p.kind]) + (info.length ? "<br>" + esc(info.join("・")) : "") +
+      '<br><span class="gmap-links"><a href="' + esc(gmapSearch(ll)) + '" target="_blank" rel="noopener">Googleマップ</a><a href="' + esc(gmapRoute(ll)) + '" target="_blank" rel="noopener">ルート</a>' +
+      (web ? '<a href="' + esc(web) + '" target="_blank" rel="noopener">公式サイト</a>' : "") +
+      '<a href="https://www.openstreetmap.org/' + esc(p.osm) + '" target="_blank" rel="noopener">OSM</a></span>';
+  }
+  function renderStayMarkers() {
+    if (!stayMap) return;
+    stayLayer.clearLayers();
+    var on = { rv: $("lyRv").checked, camp: $("lyCamp").checked, michi: $("lyMichi").checked }, cnt = { rv: 0, camp: 0, michi: 0 };
+    stayData.forEach(function (p) {
+      cnt[p.kind]++;
+      if (!on[p.kind]) return;
+      var col = tok(STAY_COLORS[p.kind]);
+      L.circleMarker([p.lat, p.lng], { radius: p.kind === "rv" ? 8 : 6, color: col, fillColor: col, fillOpacity: 0.75, weight: 2 })
+        .bindPopup(stayPopup(p)).bindTooltip(p.name, { direction: "top", offset: [0, -6] }).addTo(stayLayer);
+    });
+    $("cntRv").textContent = cnt.rv + "件"; $("cntCamp").textContent = cnt.camp + "件"; $("cntMichi").textContent = cnt.michi + "件";
+  }
+  function loadStay() {
+    if (!stayMap || stayBusy) return;
+    if (stayMap.getZoom() < 8) { $("stayStatus").textContent = "範囲が広すぎます。地図を拡大してから読み込んでください。"; return; }
+    stayBusy = true; $("stayLoad").disabled = true;
+    $("stayStatus").textContent = "読み込み中…(10秒ほどかかることがあります)";
+    var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 35000);
+    fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "data=" + encodeURIComponent(stayQuery(stayMap.getBounds())),
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function (res) {
+      if (!res.ok) throw new Error(res.status === 429 ? "混み合っています(429)" : "サーバーの応答エラー(" + res.status + ")");
+      return res.json();
+    }).then(function (json) {
+      stayData = parseOsm(json);
+      renderStayMarkers();
+      $("stayStatus").textContent = stayData.length ? stayData.length + "件を表示しました。地図を動かしたら、もう一度「この範囲を読み込む」を押してください。" : "この範囲には登録がありませんでした。範囲を変えるか、下の公式検索を使ってください。";
+    }).catch(function (err) {
+      var msg = err && err.name === "AbortError" ? "時間内に読み込めませんでした" : (err && err.message) || "読み込みに失敗しました";
+      $("stayStatus").textContent = msg + "。少し待ってからもう一度押すか、下のGoogleマップ検索・公式サイトを使ってください。";
+    }).then(function () { clearTimeout(timer); stayBusy = false; $("stayLoad").disabled = false; });
+  }
+  function initStayMap() {
+    if (stayInited) { if (stayMap) setTimeout(function () { stayMap.invalidateSize(); }, 50); return; }
+    stayInited = true;
+    if (typeof L === "undefined") { $("stayMap").style.display = "none"; $("stayMapFallback").style.display = "block"; $("stayLoad").disabled = true; $("stayHere").disabled = true; return; }
+    stayMap = L.map("stayMap", { scrollWheelZoom: false }).setView([34.65, 135.75], 9);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap contributors" }).addTo(stayMap);
+    stayLayer = L.layerGroup().addTo(stayMap);
+    setTimeout(function () { stayMap.invalidateSize(); loadStay(); }, 60);
+  }
+  $("stayLoad").addEventListener("click", loadStay);
+  ["lyRv", "lyCamp", "lyMichi"].forEach(function (id) { $(id).addEventListener("change", renderStayMarkers); });
+  $("stayHere").addEventListener("click", function () {
+    if (!navigator.geolocation) { $("stayStatus").textContent = "このブラウザでは現在地を使えません。"; return; }
+    $("stayStatus").textContent = "現在地を確認中…";
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      stayMap.setView([pos.coords.latitude, pos.coords.longitude], 11);
+      loadStay();
+    }, function () { $("stayStatus").textContent = "現在地を取得できませんでした。ブラウザの位置情報の許可を確認してください。"; }, { timeout: 10000 });
+  });
+
+  /* ---------- 点検・備品 ---------- */
+  // v=根拠の動画ID。cal=Googleカレンダーの繰り返し(RRULE)。間隔が動画で示されていないものは(推論)
+  var YT = "https://www.youtube.com/watch?v=";
+  var CARE = [
+    { id: "trip", title: "出発前に毎回", items: [
+      { t: "清水タンクを満タンにする", why: "給水できる場所は意外と少ない。災害に備えて、帰宅後も満タンにしておく。", v: "2e2HwXaobrU" },
+      { t: "タイヤの空気圧を確かめる", why: "気温が下がると空気圧も下がる。長旅の途中でも変わるので、空気入れを積んでおく。", v: "aIhm1jGYuoI" },
+      { t: "行き先のハザードマップと天気を見る", why: "大雨の夜、海沿いの駐車場が冠水した。人の少ない駐車場では浸水に気づきにくい。", v: "SNOyEbtyRuk" },
+      { t: "ウエットティッシュ・キッチンペーパーを補充する", why: "細かい物は忘れやすい。車に置きっぱなしにしておく。", v: "0k3Y3PubGY8" }
+    ]},
+    { id: "after", title: "雨・雪の日のあと", items: [
+      { t: "床下・後ろの収納が濡れていないか見る", why: "テールランプ下のコーキングの切れ目から雨が入り、床下が濡れてカビていた。放置すると床が腐る。", v: "2e2HwXaobrU" },
+      { t: "融雪剤の上を走ったら、下回りを洗う", why: "塩化カルシウムが車体下に付くと、すぐ錆びる。高圧洗浄機で洗い流す。", v: "UyiW1n8xdDc" },
+      { t: "結露を拭いたタオルを乾かす", why: "冬の車中泊は結露との戦い。窓を少し開けると減らせる。", v: "UyiW1n8xdDc" }
+    ]},
+    { id: "monthly", title: "毎月", cal: "RRULE:FREQ=MONTHLY", items: [
+      { t: "FFヒーターを30分ほど動かす", why: "月に1回30分ほど使わないと、配管の燃料が古くなって故障の原因になる。夏も忘れずに。", v: "pJrhb_YO3lA" },
+      { t: "ジャンプスターター・ポータブル電源を充電する(推論)", why: "冬はバッテリー上がりに備えて積んでいた。いざという時に空では使えない。", v: "aIhm1jGYuoI" }
+    ]},
+    { id: "filter", title: "浄水装置を使っているなら", cal: "RRULE:FREQ=WEEKLY;INTERVAL=2", items: [
+      { t: "フィルターを交換する(2週間に1回・汚れがひどければ3日に1回)", why: "ホームセンターの油取りシートを使えば1回100円ほど。", v: "SNOyEbtyRuk" },
+      { t: "2週間以上乗らない時は、タンクの水を抜いてきれいな水を通す", why: "残った水が腐って、ろ過した水まで生臭くなった。", v: "pJrhb_YO3lA" }
+    ]},
+    { id: "half", title: "半年ごと(推論)", cal: "RRULE:FREQ=MONTHLY;INTERVAL=6", items: [
+      { t: "コーキング(すき間の充填材)の切れ・はがれを見る", why: "テールランプ下、窓、ルーフベントの周り、サイクルキャリアの金具。14年前の中古車では劣化して雨漏りした。", v: "2e2HwXaobrU" },
+      { t: "雨どいのモール(ゴム)がはがれていないか見る", why: "すき間に入った水が凍って、モールがはがれていた。", v: "4LP3-e0i4MU" },
+      { t: "屋根の上(ルーフベント周り)を掃除して点検する", why: "ルーフベントから水が漏れた。見た目では原因が分からず、汚れがたまっていた。", v: "4LP3-e0i4MU" }
+    ]},
+    { id: "winter", title: "冬の前", cal: "RRULE:FREQ=YEARLY", items: [
+      { t: "冬タイヤに替え、100kmほど走ったらナットを締め直す", why: "交換後に増し締めしていた。冬タイヤは早めに替える。", v: "aIhm1jGYuoI" },
+      { t: "ドアのゴムにシリコンスプレーを吹く", why: "ドアが凍って開かず、中に閉じ込められた。", v: "4LP3-e0i4MU" },
+      { t: "走行充電器のオフスイッチか、バッテリーの低温保護を確かめる", why: "動画では、このどちらかが必要と話している。リチウムバッテリーは低温での充電に弱いため(推論)。", v: "UyiW1n8xdDc" },
+      { t: "生活用水タンクに温度計を付ける", why: "タンクの水温を見て、凍結しないか確かめていた。", v: "4LP3-e0i4MU" }
+    ]},
+    { id: "always", title: "いつも積んでおく", items: [
+      { t: "空気入れ", why: "空気圧が変わった時にすぐ直せる。", v: "aIhm1jGYuoI" },
+      { t: "ジャンプスターター・牽引ロープ・輪止め", why: "バッテリー上がりや立ち往生に備える。", v: "aIhm1jGYuoI" },
+      { t: "二酸化炭素(CO2)の測定器", why: "濃度が2,000ppmを超えたのを見て換気していた。", v: "4LP3-e0i4MU" },
+      { t: "ライト(懐中電灯)", why: "夜の峠で事故にあった時、二次災害を防ぐため車を照らした。", v: "UyiW1n8xdDc" },
+      { t: "結露を拭くタオル・吸水するカーテン", why: "寝袋が濡れずに済み、断熱にもなる。", v: "UyiW1n8xdDc" }
+    ]},
+    { id: "snow", title: "冬に積む", items: [
+      { t: "スノーワイパー", why: "普通のワイパーは凍るが、スノーワイパーは凍りにくく雪も取りやすい。", v: "4LP3-e0i4MU" },
+      { t: "凍らないウォッシャー液・解氷スプレー", why: "フロントガラスが凍った時に使う。", v: "aIhm1jGYuoI" },
+      { t: "タイヤチェーン", why: "スタッドレスでも、高速道路のチェーン規制の時は走れない。", v: "aIhm1jGYuoI" },
+      { t: "スノーブラシ・スコップ・スタックした時の脱出用具", why: "スコップを持っていったのにスノーブラシを忘れて困った。", v: "4LP3-e0i4MU" },
+      { t: "スマホが使える手袋と、厚手の手袋", why: "薄い手袋では除雪で指先が痛くなった。", v: "aIhm1jGYuoI" }
+    ]}
+  ];
+  var careDone = {};
+  function careCalUrl(sec) {
+    var d = new Date(), next = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent("【キャンピングカー点検】" + sec.title) +
+      "&dates=" + ymdStr(d) + "/" + ymdStr(next) + "&recur=" + encodeURIComponent(sec.cal) +
+      "&details=" + encodeURIComponent(sec.items.map(function (i) { return "・" + i.t; }).join("\n") + "\n\nキャンピングカー計画帳: https://rattuti.github.io/campingcar-sim/");
+  }
+  function ymdStr(d) { return d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2); }
+  function renderCare() {
+    var total = 0, done = 0;
+    $("careList").innerHTML = CARE.map(function (sec) {
+      var n = 0;
+      var rows = sec.items.map(function (it, i) {
+        var key = sec.id + i, on = !!careDone[key];
+        total++; if (on) { done++; n++; }
+        return '<label class="care-item' + (on ? " done" : "") + '"><input type="checkbox" data-care="' + key + '"' + (on ? " checked" : "") + '><span><span class="ttl">' + esc(it.t) + '</span><br><span class="why">' + esc(it.why) + '</span><br><span class="acts"><a href="' + YT + it.v + '" target="_blank" rel="noopener">動画</a></span></span></label>';
+      }).join("");
+      return '<article class="card"><div class="row" style="justify-content:space-between"><h3>' + esc(sec.title) + '</h3><span class="note">' + n + " / " + sec.items.length + "</span></div>" + rows +
+        '<div class="row" style="margin-top:6px">' + (sec.cal ? '<a class="stay-link" href="' + esc(careCalUrl(sec)) + '" target="_blank" rel="noopener">繰り返しの予定をカレンダーに入れる</a>' : "") +
+        (n ? '<button class="small" data-care-reset="' + sec.id + '">チェックを外す</button>' : "") + "</div></article>";
+    }).join("");
+    $("careKpis").innerHTML = '<div class="kpi"><div class="k">チェック済み</div><div class="v">' + done + "<small> / " + total + "</small></div></div>";
+  }
+  $("careList").addEventListener("change", function (e) {
+    var key = e.target.getAttribute("data-care");
+    if (!key) return;
+    if (e.target.checked) careDone[key] = true; else delete careDone[key];
+    renderCare();
+  });
+  $("careList").addEventListener("click", function (e) {
+    var id = e.target.getAttribute("data-care-reset");
+    if (!id) return;
+    Object.keys(careDone).forEach(function (k) { if (k.indexOf(id) === 0 && /^\d+$/.test(k.slice(id.length))) delete careDone[k]; });
+    renderCare();
+  });
+
   /* ---------- 初期表示 ---------- */
   renderTypes();
   applyBase();
@@ -1028,6 +1256,7 @@
   renderWatch();
   renderStayButtons();
   renderRoute();
+  renderCare();
 })();
 </script>
 </body>
