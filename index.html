@@ -157,7 +157,7 @@
 <body>
 <div class="wrap">
   <h1>キャンピングカー計画帳</h1>
-  <p class="subtitle">車種選び・自作(DIY)の空間と材料の計算・制作依頼先の地図をまとめたシミュレーター。入力内容はこのページを閉じると消えます。</p>
+  <p class="subtitle">車種選び・自作の計算・依頼先と泊まる場所の地図。入力はページを閉じると消えます。</p>
 
   <nav class="tabs" role="tablist">
     <button role="tab" aria-selected="true" data-view="types">車種ガイド</button>
@@ -174,7 +174,7 @@
   <section class="view active" id="view-types">
     <div class="panel">
       <h2>人数と免許から絞り込む</h2>
-      <p class="desc">寝る人数と免許を取った日を入れると、向いている車種が枠で強調され、運転できるかどうかの目安が表示されます。</p>
+      <p class="desc">人数と免許の取得日を入れると、向いている車種が分かります。</p>
       <div class="row">
         <div class="field"><label for="tPeople">寝る人数</label><input type="number" id="tPeople" min="1" max="10" value="4"></div>
         <div class="field"><label for="tLicense">普通免許の取得日</label><input type="date" id="tLicense"></div>
@@ -182,7 +182,7 @@
       </div>
     </div>
     <div class="cards" id="typeCards"></div>
-    <p class="note">価格帯は記事に出ていた目安で、仕様・新車か中古かで大きく変わります。車両総重量は車種ごとの一般的な傾向(推論)です。実際の車両総重量は車検証やカタログで確認してください。</p>
+    <p class="note">価格・重さは目安です。実際は車検証やカタログで確認してください。</p>
   </section>
 
   <!-- ===== 自作シミュレーター ===== -->
@@ -190,7 +190,7 @@
     <div class="grid2">
       <div class="panel">
         <h2>条件</h2>
-        <p class="desc">ベース車と人数を選ぶと、右側の空間チェックと下の材料リストがすぐに計算し直されます。</p>
+        <p class="desc">ベース車と人数を選ぶと、すぐ計算し直します。</p>
         <div class="field">
           <label for="dBase">ベース車(荷室寸法)</label>
           <select id="dBase"></select>
@@ -227,7 +227,7 @@
 
       <div class="panel">
         <h2>空間チェック</h2>
-        <p class="desc">寝る場所は大人が180×50cm、子どもが120×40cm(8ナンバー要件と同じ寸法)で数えています。</p>
+        <p class="desc">寝床は大人180×50cm・子ども120×40cmで数えます。</p>
         <div class="kpis" id="dKpis"></div>
         <div class="plan-box" id="dPlan" aria-label="荷室の平面図"></div>
         <h3>判定</h3>
@@ -239,7 +239,7 @@
       <div class="row" style="justify-content:space-between">
         <div>
           <h2>材料・費用リスト</h2>
-          <p class="desc" style="margin:0">数量は荷室寸法と人数から自動計算します。単価は通販でよくある価格帯の目安(推論)なので、実際の見積もりに合わせて書き換えてください。</p>
+          <p class="desc" style="margin:0">数量は自動計算。単価は目安なので書き換えてください。</p>
         </div>
         <div class="row">
           <input type="text" id="dName" placeholder="この案の名前(例: ハイエース4人案)" style="width:16em">
@@ -262,7 +262,7 @@
   <section class="view" id="view-shops">
     <div class="panel">
       <h2>制作依頼先マップ</h2>
-      <p class="desc">記事や販売店ガイドで所在地が確認できたビルダー・販売店です。点は<strong>市区町村の中心あたり</strong>に置いていて、正確な住所ではありません。地図をクリックするとそこを基準地点にして、各社までの直線距離を出します。</p>
+      <p class="desc">点は市区町村の中心あたりです。地図をクリックすると、そこからの距離が出ます。</p>
       <div class="row" style="margin-bottom:8px">
         <select id="sArea">
           <option value="">すべての地域</option>
@@ -304,7 +304,7 @@
           <tbody id="sBody"></tbody>
         </table>
       </div>
-      <p class="note">依頼する前に、各社の公式サイトで所在地・持ち込み架装の可否・8ナンバーの構造変更に対応しているか・アフターサービスを確認してください。</p>
+      <p class="note">依頼前に、持ち込み架装や8ナンバー対応を各社に確認してください。</p>
     </div>
   </section>
 
@@ -312,7 +312,7 @@
   <section class="view" id="view-stay">
     <div class="panel">
       <h2>泊まる場所の地図</h2>
-      <p class="desc">表示している範囲のRVパーク・キャンプ場・道の駅を読み込んで点で示します。データはOpenStreetMap(誰でも編集できる地図)なので、抜けや古い情報があります。特にRVパークは登録が少ないので、下の公式検索も使ってください。</p>
+      <p class="desc">表示範囲の施設を点で示します。RVパークは登録が少ないので公式検索も併用してください。</p>
       <div class="row" style="margin-bottom:6px">
         <label class="row" style="gap:4px"><input type="checkbox" id="lyRv" checked><span class="dot" style="background:var(--accent)"></span>RVパーク <span class="note" id="cntRv"></span></label>
         <label class="row" style="gap:4px"><input type="checkbox" id="lyCamp" checked><span class="dot" style="background:var(--kid)"></span>キャンプ場 <span class="note" id="cntCamp"></span></label>
@@ -325,11 +325,11 @@
       </div>
       <div id="stayMap" class="map-box"></div>
       <div class="map-fallback" id="stayMapFallback">地図を読み込めませんでした(オフラインの可能性があります)。下のGoogleマップ検索と公式サイトは使えます。</div>
-      <p class="note" style="margin-top:6px">地図データ: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>(ODbL)。点の「キャンプ場」は車の乗り入れができない所も含みます。</p>
+      <p class="note" style="margin-top:6px">地図データ: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>。キャンプ場には車で入れない所もあります。</p>
     </div>
     <div class="panel">
       <h2>泊まる場所をGoogleマップで探す</h2>
-      <p class="desc">地名を入れてボタンを押すと、Googleマップで検索結果を開きます。地名が空のときは、Googleマップが表示中の地図や現在地の周りを探します。料金や空きは施設ごとに変わるので、予約前に公式の情報で確かめてください。</p>
+      <p class="desc">地名を入れてボタンを押すと、Googleマップで開きます。空なら現在地の周りを探します。</p>
       <div class="row">
         <div class="field" style="flex:1 1 14em"><label for="stayArea">探す場所</label><input type="text" id="stayArea" placeholder="例: 奈良市、白浜、琵琶湖"></div>
       </div>
@@ -348,10 +348,10 @@
         <table>
           <thead><tr><th>種類</th><th>泊まれるか</th><th>費用</th><th>確かめること</th></tr></thead>
           <tbody>
-            <tr><td><strong>RVパーク</strong></td><td><span class="badge ok">泊まれる</span></td><td>有料</td><td>日本RV協会が認定した車中泊の施設。広い区画(幅4m×縦7mを推奨)・24時間使えるトイレ・電源などが条件。一部の条件を満たさない「RVパークライト」もある。予約は<a href="https://rv-park.jp/" target="_blank" rel="noopener">公式サイト</a>から。</td></tr>
-            <tr><td><strong>オートキャンプ場</strong></td><td><span class="badge ok">泊まれる</span></td><td>有料</td><td>電源つきの区画があるか、車の大きさの制限、チェックインの時刻。</td></tr>
-            <tr><td><strong>道の駅</strong></td><td><span class="badge warn">仮眠まで</span></td><td>無料</td><td>国土交通省は、疲労回復のための仮眠は構わないが、宿泊利用は基本的に遠慮してほしいとしている。宿泊用のスペースを設けている道の駅もあるので、各駅のホームページで確かめる。</td></tr>
-            <tr><td><strong>無料駐車場</strong></td><td><span class="badge warn">管理者しだい</span></td><td>無料</td><td>公園やお店の駐車場は、車中泊を想定していないことが多い(推論)。夜間閉鎖や車中泊禁止の掲示がないか、管理者に確かめてから使う。</td></tr>
+            <tr><td><strong>RVパーク</strong></td><td><span class="badge ok">泊まれる</span></td><td>有料</td><td>日本RV協会の認定施設。電源・24時間トイレあり。予約は<a href="https://rv-park.jp/" target="_blank" rel="noopener">公式サイト</a>から。</td></tr>
+            <tr><td><strong>オートキャンプ場</strong></td><td><span class="badge ok">泊まれる</span></td><td>有料</td><td>電源の有無と車の大きさの制限。</td></tr>
+            <tr><td><strong>道の駅</strong></td><td><span class="badge warn">仮眠まで</span></td><td>無料</td><td>仮眠はよいが、宿泊は基本遠慮(国交省)。宿泊できる駅もあるので各駅のHPで確認。</td></tr>
+            <tr><td><strong>無料駐車場</strong></td><td><span class="badge warn">管理者しだい</span></td><td>無料</td><td>車中泊禁止や夜間閉鎖の掲示を確認。管理者の許可があると安心。</td></tr>
           </tbody>
         </table>
       </div>
@@ -361,7 +361,7 @@
         <li><a href="https://www.kurumatabi.com/rvpark/" target="_blank" rel="noopener">くるま旅(日本RV協会)</a>: 新しく認定された施設の情報</li>
         <li><a href="https://www.michi-no-eki.jp/" target="_blank" rel="noopener">道の駅 公式サイト</a> / <a href="https://www.mlit.go.jp/road/soudan/soudan_03_04.html" target="_blank" rel="noopener">国土交通省「道の駅」での車中泊のQ&amp;A</a></li>
       </ul>
-      <p class="note">RVパーク公式サイトの利用規約は掲載内容の複製や二次利用を禁止しているため、このアプリには施設のデータを載せず、検索リンクで連携しています。</p>
+      <p class="note">RVパーク公式は規約で転載禁止のため、リンクで連携しています。</p>
     </div>
   </section>
 
@@ -369,18 +369,18 @@
   <section class="view" id="view-care">
     <div class="panel">
       <h2>点検・備品チェックリスト</h2>
-      <p class="desc">YouTubeチャンネル「<a href="https://www.youtube.com/@kupiochannel" target="_blank" rel="noopener">クピオちゃんねる</a>」の動画14本で実際に起きたトラブルや、使っていた道具をもとにまとめました。各項目の「動画」から元の場面を確かめられます。チェックはページを閉じると消えます。定期の項目は、Googleカレンダーに繰り返しの予定として入れておくと忘れません。</p>
+      <p class="desc"><a href="https://www.youtube.com/@kupiochannel" target="_blank" rel="noopener">クピオちゃんねる</a>の動画14本から作りました。定期の項目はカレンダーに入れておくと忘れません。</p>
       <div class="kpis" id="careKpis"></div>
     </div>
     <div class="cards" id="careList"></div>
-    <p class="note">点検の間隔は動画で語られた内容です。「(推論)」と付けたものは動画で間隔が示されていないため、こちらで置いた目安です。車種や装備の説明書の指示を優先してください。</p>
+    <p class="note">「(推論)」は動画で間隔が示されていない目安です。説明書の指示を優先してください。</p>
   </section>
 
   <!-- ===== 計算結果リスト ===== -->
   <section class="view" id="view-list">
     <div class="panel">
       <h2>計算結果リスト</h2>
-      <p class="desc">自作シミュレーターで「計算結果リストに追加」した案を並べて比べられます。安い順・寝られる人数順に並び替えられます。</p>
+      <p class="desc">自作シミュレーターで追加した案を比べられます。</p>
       <div class="row" style="margin-bottom:8px">
         <select id="lSort">
           <option value="added">追加した順</option>
@@ -403,7 +403,7 @@
   <section class="view" id="view-watch">
     <div class="panel">
       <h2>情報チェック</h2>
-      <p class="desc">新型車・展示会・法改正・相場など、定期的に見直したい項目と調べ先をまとめました。「最近1か月で検索」はGoogle検索を新しいタブで開き、直近1か月の記事だけを出します。見終わったら「確認した」を押すと、このページを開いている間だけ確認日が残ります(閉じると消えます)。</p>
+      <p class="desc">定期的に見直す項目です。検索は直近1か月の記事だけを出します。</p>
       <div class="row" style="margin-bottom:4px"><span class="note" id="wSummary"></span></div>
     </div>
     <div class="cards" id="watchCards"></div>
@@ -1169,48 +1169,48 @@
   var YT = "https://www.youtube.com/watch?v=";
   var CARE = [
     { id: "trip", title: "出発前に毎回", items: [
-      { t: "清水タンクを満タンにする", why: "給水できる場所は意外と少ない。災害に備えて、帰宅後も満タンにしておく。", v: "2e2HwXaobrU" },
-      { t: "タイヤの空気圧を確かめる", why: "気温が下がると空気圧も下がる。長旅の途中でも変わるので、空気入れを積んでおく。", v: "aIhm1jGYuoI" },
-      { t: "行き先のハザードマップと天気を見る", why: "大雨の夜、海沿いの駐車場が冠水した。人の少ない駐車場では浸水に気づきにくい。", v: "SNOyEbtyRuk" },
-      { t: "ウエットティッシュ・キッチンペーパーを補充する", why: "細かい物は忘れやすい。車に置きっぱなしにしておく。", v: "0k3Y3PubGY8" }
+      { t: "清水タンクを満タンにする", why: "給水できる場所は少ない。災害の備えにもなる。", v: "2e2HwXaobrU" },
+      { t: "タイヤの空気圧を確かめる", why: "気温が下がると空気圧も下がる。", v: "aIhm1jGYuoI" },
+      { t: "行き先のハザードマップと天気を見る", why: "大雨の夜、海沿いの駐車場が冠水した。", v: "SNOyEbtyRuk" },
+      { t: "ウエットティッシュ・キッチンペーパーを補充する", why: "細かい物は忘れやすい。", v: "0k3Y3PubGY8" }
     ]},
     { id: "after", title: "雨・雪の日のあと", items: [
-      { t: "床下・後ろの収納が濡れていないか見る", why: "テールランプ下のコーキングの切れ目から雨が入り、床下が濡れてカビていた。放置すると床が腐る。", v: "2e2HwXaobrU" },
-      { t: "融雪剤の上を走ったら、下回りを洗う", why: "塩化カルシウムが車体下に付くと、すぐ錆びる。高圧洗浄機で洗い流す。", v: "UyiW1n8xdDc" },
-      { t: "結露を拭いたタオルを乾かす", why: "冬の車中泊は結露との戦い。窓を少し開けると減らせる。", v: "UyiW1n8xdDc" }
+      { t: "床下・後ろの収納が濡れていないか見る", why: "コーキングの切れ目から雨が入り、床がカビた。", v: "2e2HwXaobrU" },
+      { t: "融雪剤の上を走ったら、下回りを洗う", why: "融雪剤が付いたままだとすぐ錆びる。", v: "UyiW1n8xdDc" },
+      { t: "結露を拭いたタオルを乾かす", why: "窓を少し開けると結露が減る。", v: "UyiW1n8xdDc" }
     ]},
     { id: "monthly", title: "毎月", cal: "RRULE:FREQ=MONTHLY", items: [
-      { t: "FFヒーターを30分ほど動かす", why: "月に1回30分ほど使わないと、配管の燃料が古くなって故障の原因になる。夏も忘れずに。", v: "pJrhb_YO3lA" },
-      { t: "ジャンプスターター・ポータブル電源を充電する(推論)", why: "冬はバッテリー上がりに備えて積んでいた。いざという時に空では使えない。", v: "aIhm1jGYuoI" }
+      { t: "FFヒーターを30分ほど動かす", why: "使わないと燃料が古くなり故障する。夏も忘れずに。", v: "pJrhb_YO3lA" },
+      { t: "ジャンプスターター・ポータブル電源を充電する(推論)", why: "いざという時に空では使えない。", v: "aIhm1jGYuoI" }
     ]},
     { id: "filter", title: "浄水装置を使っているなら", cal: "RRULE:FREQ=WEEKLY;INTERVAL=2", items: [
-      { t: "フィルターを交換する(2週間に1回・汚れがひどければ3日に1回)", why: "ホームセンターの油取りシートを使えば1回100円ほど。", v: "SNOyEbtyRuk" },
-      { t: "2週間以上乗らない時は、タンクの水を抜いてきれいな水を通す", why: "残った水が腐って、ろ過した水まで生臭くなった。", v: "pJrhb_YO3lA" }
+      { t: "フィルターを交換する(2週間に1回・汚れがひどければ3日に1回)", why: "油取りシートなら1回100円ほど。", v: "SNOyEbtyRuk" },
+      { t: "2週間以上乗らない時は、タンクの水を抜いてきれいな水を通す", why: "残った水が腐り、生臭くなった。", v: "pJrhb_YO3lA" }
     ]},
     { id: "half", title: "半年ごと(推論)", cal: "RRULE:FREQ=MONTHLY;INTERVAL=6", items: [
-      { t: "コーキング(すき間の充填材)の切れ・はがれを見る", why: "テールランプ下、窓、ルーフベントの周り、サイクルキャリアの金具。14年前の中古車では劣化して雨漏りした。", v: "2e2HwXaobrU" },
-      { t: "雨どいのモール(ゴム)がはがれていないか見る", why: "すき間に入った水が凍って、モールがはがれていた。", v: "4LP3-e0i4MU" },
-      { t: "屋根の上(ルーフベント周り)を掃除して点検する", why: "ルーフベントから水が漏れた。見た目では原因が分からず、汚れがたまっていた。", v: "4LP3-e0i4MU" }
+      { t: "コーキング(すき間の充填材)の切れ・はがれを見る", why: "テールランプ下・窓・ルーフベント周り。古い車ほど劣化する。", v: "2e2HwXaobrU" },
+      { t: "雨どいのモール(ゴム)がはがれていないか見る", why: "入った水が凍ってはがれた。", v: "4LP3-e0i4MU" },
+      { t: "屋根の上(ルーフベント周り)を掃除して点検する", why: "ルーフベントから水が漏れた。", v: "4LP3-e0i4MU" }
     ]},
     { id: "winter", title: "冬の前", cal: "RRULE:FREQ=YEARLY", items: [
-      { t: "冬タイヤに替え、100kmほど走ったらナットを締め直す", why: "交換後に増し締めしていた。冬タイヤは早めに替える。", v: "aIhm1jGYuoI" },
-      { t: "ドアのゴムにシリコンスプレーを吹く", why: "ドアが凍って開かず、中に閉じ込められた。", v: "4LP3-e0i4MU" },
-      { t: "走行充電器のオフスイッチか、バッテリーの低温保護を確かめる", why: "動画では、このどちらかが必要と話している。リチウムバッテリーは低温での充電に弱いため(推論)。", v: "UyiW1n8xdDc" },
-      { t: "生活用水タンクに温度計を付ける", why: "タンクの水温を見て、凍結しないか確かめていた。", v: "4LP3-e0i4MU" }
+      { t: "冬タイヤに替え、100kmほど走ったらナットを締め直す", why: "冬タイヤは早めに替える。", v: "aIhm1jGYuoI" },
+      { t: "ドアのゴムにシリコンスプレーを吹く", why: "ドアが凍って開かなくなった。", v: "4LP3-e0i4MU" },
+      { t: "走行充電器のオフスイッチか、バッテリーの低温保護を確かめる", why: "リチウムは低温の充電に弱い(推論)。", v: "UyiW1n8xdDc" },
+      { t: "生活用水タンクに温度計を付ける", why: "凍結しないか水温で確かめる。", v: "4LP3-e0i4MU" }
     ]},
     { id: "always", title: "いつも積んでおく", items: [
-      { t: "空気入れ", why: "空気圧が変わった時にすぐ直せる。", v: "aIhm1jGYuoI" },
-      { t: "ジャンプスターター・牽引ロープ・輪止め", why: "バッテリー上がりや立ち往生に備える。", v: "aIhm1jGYuoI" },
-      { t: "二酸化炭素(CO2)の測定器", why: "濃度が2,000ppmを超えたのを見て換気していた。", v: "4LP3-e0i4MU" },
-      { t: "ライト(懐中電灯)", why: "夜の峠で事故にあった時、二次災害を防ぐため車を照らした。", v: "UyiW1n8xdDc" },
-      { t: "結露を拭くタオル・吸水するカーテン", why: "寝袋が濡れずに済み、断熱にもなる。", v: "UyiW1n8xdDc" }
+      { t: "空気入れ", why: "空気圧をすぐ直せる。", v: "aIhm1jGYuoI" },
+      { t: "ジャンプスターター・牽引ロープ・輪止め", why: "バッテリー上がり・立ち往生に。", v: "aIhm1jGYuoI" },
+      { t: "二酸化炭素(CO2)の測定器", why: "2,000ppmを超えたら換気。", v: "4LP3-e0i4MU" },
+      { t: "ライト(懐中電灯)", why: "事故の時、車を照らして二次災害を防ぐ。", v: "UyiW1n8xdDc" },
+      { t: "結露を拭くタオル・吸水するカーテン", why: "寝袋が濡れず、断熱にもなる。", v: "UyiW1n8xdDc" }
     ]},
     { id: "snow", title: "冬に積む", items: [
-      { t: "スノーワイパー", why: "普通のワイパーは凍るが、スノーワイパーは凍りにくく雪も取りやすい。", v: "4LP3-e0i4MU" },
-      { t: "凍らないウォッシャー液・解氷スプレー", why: "フロントガラスが凍った時に使う。", v: "aIhm1jGYuoI" },
-      { t: "タイヤチェーン", why: "スタッドレスでも、高速道路のチェーン規制の時は走れない。", v: "aIhm1jGYuoI" },
-      { t: "スノーブラシ・スコップ・スタックした時の脱出用具", why: "スコップを持っていったのにスノーブラシを忘れて困った。", v: "4LP3-e0i4MU" },
-      { t: "スマホが使える手袋と、厚手の手袋", why: "薄い手袋では除雪で指先が痛くなった。", v: "aIhm1jGYuoI" }
+      { t: "スノーワイパー", why: "凍りにくく雪も取りやすい。", v: "4LP3-e0i4MU" },
+      { t: "凍らないウォッシャー液・解氷スプレー", why: "ガラスが凍った時に。", v: "aIhm1jGYuoI" },
+      { t: "タイヤチェーン", why: "チェーン規制ではスタッドレスでも走れない。", v: "aIhm1jGYuoI" },
+      { t: "スノーブラシ・スコップ・スタックした時の脱出用具", why: "スノーブラシを忘れて困った。", v: "4LP3-e0i4MU" },
+      { t: "スマホが使える手袋と、厚手の手袋", why: "薄い手袋だと除雪で指が痛い。", v: "aIhm1jGYuoI" }
     ]}
   ];
   var careDone = {};
