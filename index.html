@@ -131,6 +131,9 @@
   .care-item input { width: 20px; height: 20px; margin-top: 2px; flex: 0 0 auto; }
   .care-item .why { color: var(--muted); font-size: 0.8rem; }
   .care-item .acts a { font-size: 0.8rem; margin-right: 10px; }
+  .care-item .prod { font-size: 0.8rem; }
+  .care-item .prod a { margin-left: 8px; }
+  .care-item .ttl { cursor: pointer; }
   .care-item.done .ttl { text-decoration: line-through; color: var(--muted); }
   @media (max-width: 560px) { .map-box { height: 340px; } }
   /* 地図 */
@@ -359,7 +362,7 @@
   <section class="view" id="view-care">
     <div class="panel">
       <h2>点検・備品チェックリスト</h2>
-      <p class="desc"><a href="https://www.youtube.com/@kupiochannel" target="_blank" rel="noopener">クピオちゃんねる</a>の動画14本から作りました。定期の項目はカレンダーに入れておくと忘れません。</p>
+      <p class="desc"><a href="https://www.youtube.com/@kupiochannel" target="_blank" rel="noopener">クピオちゃんねる</a>の動画14本から作りました。「使用例」は動画で使われていた製品で、リンクは検索結果です(性能や価格は確かめていません)。</p>
       <div class="kpis" id="careKpis"></div>
     </div>
     <div class="cards" id="careList"></div>
@@ -1152,22 +1155,22 @@
   var CARE = [
     { id: "trip", title: "出発前に毎回", items: [
       { t: "清水タンクを満タンにする", why: "給水できる場所は少ない。災害の備えにもなる。", v: "2e2HwXaobrU" },
-      { t: "タイヤの空気圧を確かめる(空気入れを積んでおく)", why: "気温が下がると空気圧も下がる。", v: "aIhm1jGYuoI" },
+      { t: "タイヤの空気圧を確かめる(空気入れを積んでおく)", why: "気温が下がると空気圧も下がる。", v: "aIhm1jGYuoI", p: [{ n: "電動空気入れ", v: "2e2HwXaobrU" }] },
       { t: "行き先のハザードマップと天気を見る", why: "大雨の夜、海沿いの駐車場が冠水した。", v: "SNOyEbtyRuk" },
       { t: "ウエットティッシュ・キッチンペーパーを補充する", why: "細かい物は忘れやすい。", v: "0k3Y3PubGY8" }
     ]},
     { id: "after", title: "雨・雪の日のあと", items: [
       { t: "床下・後ろの収納が濡れていないか見る", why: "コーキングの切れ目から雨が入り、床がカビた。", v: "2e2HwXaobrU" },
-      { t: "融雪剤の上を走ったら、下回りを洗う", why: "融雪剤が付いたままだとすぐ錆びる。", v: "UyiW1n8xdDc" },
-      { t: "結露を拭いたタオルを乾かす(吸水カーテンも便利)", why: "窓を少し開けると結露が減る。", v: "UyiW1n8xdDc" }
+      { t: "融雪剤の上を走ったら、下回りを洗う", why: "融雪剤が付いたままだとすぐ錆びる。", v: "UyiW1n8xdDc", p: [{ n: "ケルヒャー K 2 サイレント", v: "2e2HwXaobrU" }, { n: "車 下回り 高圧洗浄ノズル", v: "2e2HwXaobrU" }] },
+      { t: "結露を拭いたタオルを乾かす(吸水カーテンも便利)", why: "窓を少し開けると結露が減る。", v: "UyiW1n8xdDc", p: [{ n: "吸水タオル", v: "0k3Y3PubGY8" }] }
     ]},
     { id: "monthly", title: "毎月", cal: "RRULE:FREQ=MONTHLY", items: [
       { t: "FFヒーターを30分ほど動かす", why: "使わないと燃料が古くなり故障する。夏も忘れずに。", v: "pJrhb_YO3lA" },
-      { t: "ジャンプスターター・ポータブル電源を充電し、積んでおく(推論)", why: "いざという時に空では使えない。", v: "aIhm1jGYuoI" }
+      { t: "ジャンプスターター・ポータブル電源を充電し、積んでおく(推論)", why: "いざという時に空では使えない。", v: "aIhm1jGYuoI", p: [{ n: "パワーオーク ポータブル電源 AC100", v: "-Y27RBAw9v8", note: "提供品" }, { n: "ジャンプスターター", generic: true }] }
     ]},
     { id: "filter", title: "浄水装置を使っているなら", cal: "RRULE:FREQ=WEEKLY;INTERVAL=2", items: [
-      { t: "フィルターを交換する(2週間に1回・汚れがひどければ3日に1回)", why: "油取りシートなら1回100円ほど。", v: "SNOyEbtyRuk" },
-      { t: "2週間以上乗らない時は、タンクの水を抜いてきれいな水を通す", why: "残った水が腐り、生臭くなった。", v: "pJrhb_YO3lA" }
+      { t: "フィルターを交換する(2週間に1回・汚れがひどければ3日に1回)", why: "油取りシートなら1回100円ほど。", v: "SNOyEbtyRuk", p: [{ n: "エヴォーブテクノロジー 濾過装置", v: "SNOyEbtyRuk", web: true }] },
+      { t: "2週間以上乗らない時は、タンクの水を抜いてきれいな水を通す", why: "残った水が腐り、生臭くなった。", v: "pJrhb_YO3lA", p: [{ n: "RVクリーンタンク洗浄液", v: "3YSs6cFkaN4" }] }
     ]},
     { id: "half", title: "半年ごと(推論)", cal: "RRULE:FREQ=MONTHLY;INTERVAL=6", items: [
       { t: "コーキング(すき間の充填材)の切れ・はがれを見る", why: "テールランプ下・窓・ルーフベント周り。古い車ほど劣化する。", v: "2e2HwXaobrU" },
@@ -1177,18 +1180,21 @@
     { id: "winter", title: "冬の前", cal: "RRULE:FREQ=YEARLY", items: [
       { t: "冬タイヤに替え、100kmほど走ったらナットを締め直す", why: "冬タイヤは早めに替える。", v: "aIhm1jGYuoI" },
       { t: "ドアのゴムにシリコンスプレーを吹く", why: "ドアが凍って開かなくなった。", v: "4LP3-e0i4MU" },
-      { t: "走行充電器のオフスイッチか、バッテリーの低温保護を確かめる", why: "リチウムは低温の充電に弱い(推論)。", v: "UyiW1n8xdDc" },
-      { t: "生活用水タンクに温度計を付ける", why: "凍結しないか水温で確かめる。", v: "4LP3-e0i4MU" }
+      { t: "走行充電器のオフスイッチか、バッテリーの低温保護を確かめる", why: "リチウムは低温の充電に弱い(推論)。", v: "UyiW1n8xdDc", p: [{ n: "VATRER リチウムバッテリー 自己加熱", v: "pJrhb_YO3lA", note: "低温でも充電できるよう自分で温めるタイプ" }] },
+      { t: "生活用水タンクに温度計を付ける", why: "凍結しないか水温で確かめる。", v: "4LP3-e0i4MU", p: [{ n: "ワイヤレス温度計", v: "3YSs6cFkaN4", note: "動画の製品は販売終了" }] }
     ]},
     { id: "always", title: "いつも積んでおく", items: [
       { t: "牽引ロープ・輪止め", why: "立ち往生に備える。", v: "aIhm1jGYuoI" },
-      { t: "二酸化炭素(CO2)の測定器", why: "2,000ppmを超えたら換気。", v: "4LP3-e0i4MU" },
-      { t: "ライト(懐中電灯)", why: "事故の時、車を照らして二次災害を防ぐ。", v: "UyiW1n8xdDc" }
+      { t: "二酸化炭素(CO2)の測定器", why: "2,000ppmを超えたら換気。", v: "4LP3-e0i4MU", p: [{ n: "CO2 モニター", generic: true }] },
+      { t: "ライト(懐中電灯)", why: "事故の時、車を照らして二次災害を防ぐ。", v: "UyiW1n8xdDc", p: [{ n: "LED ランタン 明るい", generic: true }] },
+      { t: "消火器・消火スプレー", why: "火を使う車内の備え。複数の動画で積んでいた。", v: "3YSs6cFkaN4", p: [{ n: "消火器 クイックガード", v: "3YSs6cFkaN4" }, { n: "消火スプレー", generic: true }] },
+      { t: "非常用トイレ(凝固剤・防臭袋)", why: "トイレがない場所や災害時に。", v: "0k3Y3PubGY8", p: [{ n: "ニューゾーブ 凝固剤", v: "3YSs6cFkaN4" }, { n: "防臭袋", v: "auzD4GGZOys" }] },
+      { t: "アルコールチェッカー", why: "車中泊の翌朝、運転前に確かめる。", v: "3YSs6cFkaN4", p: [{ n: "タニタ アルコールチェッカー", v: "3YSs6cFkaN4" }] }
     ]},
     { id: "snow", title: "冬に積む", items: [
-      { t: "スノーワイパー", why: "凍りにくく雪も取りやすい。", v: "4LP3-e0i4MU" },
+      { t: "スノーワイパー", why: "凍りにくく雪も取りやすい。", v: "4LP3-e0i4MU", p: [{ n: "スノーワイパー", generic: true }] },
       { t: "凍らないウォッシャー液・解氷スプレー", why: "ガラスが凍った時に。", v: "aIhm1jGYuoI" },
-      { t: "タイヤチェーン", why: "チェーン規制ではスタッドレスでも走れない。", v: "aIhm1jGYuoI" },
+      { t: "タイヤチェーン", why: "チェーン規制ではスタッドレスでも走れない。", v: "aIhm1jGYuoI", p: [{ n: "タイヤチェーン 非金属", generic: true }] },
       { t: "スノーブラシ・スコップ・スタックした時の脱出用具", why: "スノーブラシを忘れて困った。", v: "4LP3-e0i4MU" },
       { t: "スマホが使える手袋と、厚手の手袋", why: "薄い手袋だと除雪で指が痛い。", v: "aIhm1jGYuoI" }
     ]}
@@ -1201,6 +1207,19 @@
       "&details=" + encodeURIComponent(sec.items.map(function (i) { return "・" + i.t; }).join("\n") + "\n\nキャンピングカー計画帳: https://rattuti.github.io/campingcar-sim/");
   }
   function ymdStr(d) { return d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2); }
+  // 製品は動画の概要欄・字幕に出てきたもの。リンクはアフィリエイトでない検索結果にする
+  function shopSearch(name) {
+    return '<a href="https://www.amazon.co.jp/s?k=' + encodeURIComponent(name) + '" target="_blank" rel="noopener">Amazon</a>' +
+      '<a href="https://search.rakuten.co.jp/search/mall/' + encodeURIComponent(name) + '/" target="_blank" rel="noopener">楽天</a>';
+  }
+  function prodHtml(list) {
+    if (!list || !list.length) return "";
+    return list.map(function (pr) {
+      if (pr.generic) return '<br><span class="prod"><span class="note">製品を探す:</span> ' + shopSearch(pr.n) + "</span>";
+      var link = pr.web ? '<a href="https://www.google.com/search?q=' + encodeURIComponent(pr.n) + '" target="_blank" rel="noopener">検索</a>' : shopSearch(pr.n);
+      return '<br><span class="prod">使用例: <strong>' + esc(pr.n) + "</strong>" + (pr.note ? '<span class="note">(' + esc(pr.note) + ")</span>" : "") + " " + link + "</span>";
+    }).join("");
+  }
   function renderCare() {
     var total = 0, done = 0;
     $("careList").innerHTML = CARE.map(function (sec) {
@@ -1208,7 +1227,7 @@
       var rows = sec.items.map(function (it, i) {
         var key = sec.id + i, on = !!careDone[key];
         total++; if (on) { done++; n++; }
-        return '<label class="care-item' + (on ? " done" : "") + '"><input type="checkbox" data-care="' + key + '"' + (on ? " checked" : "") + '><span><span class="ttl">' + esc(it.t) + '</span><br><span class="why">' + esc(it.why) + '</span><br><span class="acts"><a href="' + YT + it.v + '" target="_blank" rel="noopener">動画</a></span></span></label>';
+        return '<div class="care-item' + (on ? " done" : "") + '"><input type="checkbox" id="care-' + key + '" data-care="' + key + '"' + (on ? " checked" : "") + '><span><label class="ttl" for="care-' + key + '">' + esc(it.t) + '</label><br><span class="why">' + esc(it.why) + '</span>' + prodHtml(it.p) + '<br><span class="acts"><a href="' + YT + it.v + '" target="_blank" rel="noopener">動画</a></span></span></div>';
       }).join("");
       return '<article class="card"><div class="row" style="justify-content:space-between"><h3>' + esc(sec.title) + '</h3><span class="note">' + n + " / " + sec.items.length + "</span></div>" + rows +
         '<div class="row" style="margin-top:6px">' + (sec.cal ? '<a class="stay-link" href="' + esc(careCalUrl(sec)) + '" target="_blank" rel="noopener">繰り返しの予定をカレンダーに入れる</a>' : "") +
