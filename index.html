@@ -162,12 +162,10 @@
   <nav class="tabs" role="tablist">
     <button role="tab" aria-selected="true" data-view="types">車種ガイド</button>
     <button role="tab" aria-selected="false" data-view="diy">自作シミュレーター</button>
-    <button role="tab" aria-selected="false" data-view="shops">制作依頼先マップ</button>
-    <button role="tab" aria-selected="false" data-view="stay">泊まる場所</button>
+    <button role="tab" aria-selected="false" data-view="shops">地図</button>
     <button role="tab" aria-selected="false" data-view="care">点検・備品</button>
     <button role="tab" aria-selected="false" data-view="list">計算結果リスト<span class="count" id="listCount">0</span></button>
-    <button role="tab" aria-selected="false" data-view="watch">情報チェック</button>
-    <button role="tab" aria-selected="false" data-view="info">情報源</button>
+    <button role="tab" aria-selected="false" data-view="info">情報</button>
   </nav>
 
   <!-- ===== 車種ガイド ===== -->
@@ -261,8 +259,19 @@
   <!-- ===== 制作依頼先マップ ===== -->
   <section class="view" id="view-shops">
     <div class="panel">
-      <h2>制作依頼先マップ</h2>
-      <p class="desc">点は市区町村の中心あたりです。地図をクリックすると、そこからの距離が出ます。</p>
+      <h2>地図</h2>
+      <p class="desc">依頼先と泊まる場所を1つの地図に表示します。地図をクリックすると、そこからの距離が出ます。</p>
+      <div class="row" style="margin-bottom:6px">
+        <label class="row" style="gap:4px"><input type="checkbox" id="lyShop" checked><span class="dot" style="background:var(--ng)"></span>依頼先</label>
+        <label class="row" style="gap:4px"><input type="checkbox" id="lyRv" checked><span class="dot" style="background:var(--accent)"></span>RVパーク <span class="note" id="cntRv"></span></label>
+        <label class="row" style="gap:4px"><input type="checkbox" id="lyCamp" checked><span class="dot" style="background:var(--kid)"></span>キャンプ場 <span class="note" id="cntCamp"></span></label>
+        <label class="row" style="gap:4px"><input type="checkbox" id="lyMichi" checked><span class="dot" style="background:var(--warn)"></span>道の駅 <span class="note" id="cntMichi"></span></label>
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <button class="primary" id="stayLoad">この範囲の泊まる場所を読み込む</button>
+        <button id="stayHere">現在地へ移動</button>
+        <span class="note" id="stayStatus" role="status">地図を拡大してから読み込んでください。</span>
+      </div>
       <div class="row" style="margin-bottom:8px">
         <select id="sArea">
           <option value="">すべての地域</option>
@@ -289,15 +298,16 @@
         <span class="note" id="sOrigin">基準地点: 未設定(地図をクリック)</span>
       </div>
       <div class="legend">
-        <span><span class="dot" style="background:var(--accent)"></span>製造(ビルダー)</span>
-        <span><span class="dot" style="background:var(--other)"></span>販売・その他/区分未確認</span>
+        <span><span class="dot" style="background:var(--ng)"></span>依頼先(製造)</span>
+        <span><span class="dot" style="background:var(--other)"></span>依頼先(販売・未確認)</span>
         <span><span class="dot" style="background:var(--ok)"></span>基準地点</span>
       </div>
       <div id="map"></div>
-      <div class="map-fallback" id="mapFallback">地図を読み込めませんでした(オフラインの可能性があります)。下の一覧はそのまま使えます。</div>
+      <div class="map-fallback" id="mapFallback">地図を読み込めませんでした(オフラインの可能性があります)。下の一覧と検索は使えます。</div>
+      <p class="note" style="margin-top:6px">地図データ: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>。依頼先の点は市区町村の中心あたり、キャンプ場には車で入れない所もあります。</p>
     </div>
     <div class="panel">
-      <h2>一覧 <span class="note" id="sCount"></span></h2>
+      <h2>依頼先の一覧 <span class="note" id="sCount"></span></h2>
       <div class="table-wrap">
         <table class="shop-list">
           <thead><tr><th>社名</th><th>所在地</th><th>区分</th><th>主な車種</th><th class="num">距離</th><th>出典</th></tr></thead>
@@ -305,27 +315,6 @@
         </table>
       </div>
       <p class="note">依頼前に、持ち込み架装や8ナンバー対応を各社に確認してください。</p>
-    </div>
-  </section>
-
-  <!-- ===== 泊まる場所 ===== -->
-  <section class="view" id="view-stay">
-    <div class="panel">
-      <h2>泊まる場所の地図</h2>
-      <p class="desc">表示範囲の施設を点で示します。RVパークは登録が少ないので公式検索も併用してください。</p>
-      <div class="row" style="margin-bottom:6px">
-        <label class="row" style="gap:4px"><input type="checkbox" id="lyRv" checked><span class="dot" style="background:var(--accent)"></span>RVパーク <span class="note" id="cntRv"></span></label>
-        <label class="row" style="gap:4px"><input type="checkbox" id="lyCamp" checked><span class="dot" style="background:var(--kid)"></span>キャンプ場 <span class="note" id="cntCamp"></span></label>
-        <label class="row" style="gap:4px"><input type="checkbox" id="lyMichi" checked><span class="dot" style="background:var(--warn)"></span>道の駅 <span class="note" id="cntMichi"></span></label>
-      </div>
-      <div class="row" style="margin-bottom:8px">
-        <button class="primary" id="stayLoad">この範囲を読み込む</button>
-        <button id="stayHere">現在地へ移動</button>
-        <span class="note" id="stayStatus" role="status">地図を開くと関西周辺を読み込みます。</span>
-      </div>
-      <div id="stayMap" class="map-box"></div>
-      <div class="map-fallback" id="stayMapFallback">地図を読み込めませんでした(オフラインの可能性があります)。下のGoogleマップ検索と公式サイトは使えます。</div>
-      <p class="note" style="margin-top:6px">地図データ: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>。キャンプ場には車で入れない所もあります。</p>
     </div>
     <div class="panel">
       <h2>泊まる場所をGoogleマップで探す</h2>
@@ -365,6 +354,7 @@
     </div>
   </section>
 
+
   <!-- ===== 点検・備品 ===== -->
   <section class="view" id="view-care">
     <div class="panel">
@@ -399,20 +389,17 @@
     </div>
   </section>
 
-  <!-- ===== 情報チェック ===== -->
-  <section class="view" id="view-watch">
-    <div class="panel">
-      <h2>情報チェック</h2>
-      <p class="desc">定期的に見直す項目です。検索は直近1か月の記事だけを出します。</p>
-      <div class="row" style="margin-bottom:4px"><span class="note" id="wSummary"></span></div>
-    </div>
-    <div class="cards" id="watchCards"></div>
-  </section>
 
   <!-- ===== 情報源 ===== -->
   <section class="view" id="view-info">
     <div class="panel">
-      <h2>このアプリの数値の出典</h2>
+      <h2>定期的に見直す情報</h2>
+      <p class="desc">定期的に見直す項目です。検索は直近1か月の記事だけを出します。</p>
+      <div class="row" style="margin-bottom:4px"><span class="note" id="wSummary"></span></div>
+    </div>
+    <div class="cards" id="watchCards"></div>
+    <div class="panel">
+      <h2>このアプリの出典</h2>
       <p class="desc">2026年10月19日に調べた内容です。法令は二次情報(解説記事)をもとにしているので、申請の前に国土交通省の通達の原文や運輸支局で確認してください。</p>
       <h3>8ナンバー(キャンピング車)の構造要件</h3>
       <ul class="sources">
@@ -562,7 +549,6 @@
       document.querySelectorAll(".tabs button").forEach(function (x) { x.setAttribute("aria-selected", x === b ? "true" : "false"); });
       document.querySelectorAll(".view").forEach(function (v) { v.classList.toggle("active", v.id === "view-" + b.dataset.view); });
       if (b.dataset.view === "shops") { initMap(); if (map) setTimeout(function () { map.invalidateSize(); }, 50); }
-      if (b.dataset.view === "stay") initStayMap();
       if (b.dataset.view === "list") renderList();
     });
   });
@@ -939,17 +925,18 @@
     if (map) {
       markerLayer.clearLayers(); markers = [];
       arr.forEach(function (s) {
-        var col = s.kind === "build" ? tok("--accent") : tok("--other");
-        var m = L.circleMarker([s.lat, s.lng], { radius: 8, color: col, fillColor: col, fillOpacity: 0.75, weight: 2 }).bindPopup(popupHtml(s));
+        var col = s.kind === "build" ? tok("--ng") : tok("--other");
+        var m = L.circleMarker([s.lat, s.lng], { radius: 8, color: col, fillColor: col, fillOpacity: 0.8, weight: 2, bubblingMouseEvents: false }).bindPopup(popupHtml(s));
         m.bindTooltip(s.name, { direction: "top", offset: [0, -6] });
-        m.addTo(markerLayer); markers.push({ name: s.name, m: m });
+        if ($("lyShop").checked) m.addTo(markerLayer);
+        markers.push({ name: s.name, m: m });
       });
     }
   }
   function initMap() {
     if (mapInited) return;
     mapInited = true;
-    if (typeof L === "undefined") { $("map").style.display = "none"; $("mapFallback").style.display = "block"; renderShops(); return; }
+    if (typeof L === "undefined") { $("map").style.display = "none"; $("mapFallback").style.display = "block"; $("stayLoad").disabled = true; $("stayHere").disabled = true; renderShops(); return; }
     map = L.map("map", { scrollWheelZoom: false }).setView([36.2, 137.5], 5);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
     markerLayer = L.layerGroup().addTo(map);
@@ -960,6 +947,7 @@
       $("sOrigin").innerHTML = "基準地点: " + origin.lat.toFixed(3) + ", " + origin.lng.toFixed(3) + ' <button class="small" id="sClear">解除</button>';
       renderShops();
     });
+    setupStayLayer();
     renderShops();
   }
   $("sOrigin").addEventListener("click", function (e) {
@@ -989,16 +977,12 @@
   /* ---------- 情報チェック ---------- */
   // q=検索語、links=公式など直接見る先。頻度は目安
   var WATCH = [
-    { id: "new", title: "新型車・新モデル", freq: "月1回", why: "各社の新しいモデルや価格の改定は、車種ガイドの価格帯を見直す材料になります。",
-      points: ["軽キャンパー・バンコンの新モデルと価格", "ベース車(ハイエース等)のモデルチェンジや受注停止"], q: ["キャンピングカー 新型 発表", "ハイエース キャンピングカー 新モデル 価格"] },
+    { id: "new", title: "新型車・中古相場", freq: "月1回", why: "各社の新しいモデルや価格の改定は、車種ガイドの価格帯を見直す材料になります。",
+      points: ["軽キャンパー・バンコンの新モデルと価格", "ベース車(ハイエース等)のモデルチェンジや受注停止", "バンコン・キャブコン・軽キャンパーの中古価格帯"], q: ["キャンピングカー 新型 発表", "ハイエース キャンピングカー 新モデル 価格", "中古 キャンピングカー 相場 2026"] },
     { id: "show", title: "展示会・ショー(関西)", freq: "月1回", why: "実車を見て寝床の広さや高さを体感できる機会です。各社のビルダーに直接相談もできます。",
       points: ["開催日・会場・入場料", "出展するビルダー(マップの会社が出るか)"], q: ["キャンピングカーショー 関西 2026", "キャンピングカー フェア 大阪 京都 奈良"], links: [{ t: "日本RV協会", u: "https://www.jrva.com/" }] },
-    { id: "law", title: "法令(8ナンバー・構造変更)", freq: "3か月に1回", why: "自作シミュレーターの8ナンバー判定は2022年4月の改正内容が前提です。変わったら判定を直す必要があります。",
-      points: ["キャンピング車の構造要件の改正", "構造変更検査の手続きの変更"], q: ["8ナンバー キャンピング車 構造要件 改正", "キャンピング車 構造要件 国土交通省 通達"], links: [{ t: "国土交通省 特種用途自動車", u: "https://www.mlit.go.jp/jidosha/kensatoroku/kensa/kns07_2.htm" }] },
-    { id: "license", title: "免許・けん引のルール", freq: "3か月に1回", why: "車種ガイドの「運転できる総重量」の判定に使っています。",
-      points: ["普通免許・準中型免許の区分の変更", "けん引免許(750kg)の扱いの変更"], q: ["普通免許 車両総重量 改正 キャンピングカー", "けん引免許 750kg 改正"] },
-    { id: "used", title: "中古相場", freq: "月1回", why: "完成車を中古で買う場合と、自作した場合の総額を比べる材料になります。",
-      points: ["バンコン・キャブコン・軽キャンパーの中古価格帯", "ベース車(ハイエース等)の中古価格"], q: ["中古 キャンピングカー 相場 2026", "ハイエース 中古 相場 2026"] },
+    { id: "law", title: "法令・免許(8ナンバー・けん引)", freq: "3か月に1回", why: "自作シミュレーターの8ナンバー判定は2022年4月の改正内容が前提です。変わったら判定を直す必要があります。",
+      points: ["キャンピング車の構造要件の改正", "構造変更検査の手続きの変更", "普通免許・けん引免許(750kg)の区分の変更"], q: ["8ナンバー キャンピング車 構造要件 改正", "キャンピング車 構造要件 国土交通省 通達", "けん引免許 750kg 改正"], links: [{ t: "国土交通省 特種用途自動車", u: "https://www.mlit.go.jp/jidosha/kensatoroku/kensa/kns07_2.htm" }] },
     { id: "parts", title: "DIY部材・電装の価格", freq: "月1回", why: "材料リストの単価は目安なので、ここで調べた値で書き換えると見積もりの精度が上がります。",
       points: ["リン酸鉄バッテリー(100Ahクラス)の価格", "インバーター・走行充電器・FFヒーターの価格", "合板・断熱材の価格"], q: ["リン酸鉄 リチウム サブバッテリー 100Ah 価格", "キャンピングカー 走行充電器 価格 比較", "FFヒーター 車中泊 価格"] },
     { id: "builder", title: "依頼先(関西のビルダー)", freq: "3か月に1回", why: "マップに載っていない関西の製作・持ち込み架装の店を見つけるためです。",
@@ -1115,7 +1099,7 @@
       cnt[p.kind]++;
       if (!on[p.kind]) return;
       var col = tok(STAY_COLORS[p.kind]);
-      L.circleMarker([p.lat, p.lng], { radius: p.kind === "rv" ? 8 : 6, color: col, fillColor: col, fillOpacity: 0.75, weight: 2 })
+      L.circleMarker([p.lat, p.lng], { radius: p.kind === "rv" ? 8 : 6, color: col, fillColor: col, fillOpacity: 0.75, weight: 2, bubblingMouseEvents: false })
         .bindPopup(stayPopup(p)).bindTooltip(p.name, { direction: "top", offset: [0, -6] }).addTo(stayLayer);
     });
     $("cntRv").textContent = cnt.rv + "件"; $("cntCamp").textContent = cnt.camp + "件"; $("cntMichi").textContent = cnt.michi + "件";
@@ -1138,24 +1122,22 @@
     }).then(function (json) {
       stayData = parseOsm(json);
       renderStayMarkers();
-      $("stayStatus").textContent = stayData.length ? stayData.length + "件を表示しました。地図を動かしたら、もう一度「この範囲を読み込む」を押してください。" : "この範囲には登録がありませんでした。範囲を変えるか、下の公式検索を使ってください。";
+      $("stayStatus").textContent = stayData.length ? stayData.length + "件を表示しました。地図を動かしたら、もう一度読み込んでください。" : "この範囲には登録がありませんでした。範囲を変えるか、下の公式検索を使ってください。";
     }).catch(function (err) {
       var msg = err && err.name === "AbortError" ? "時間内に読み込めませんでした" : (err && err.message) || "読み込みに失敗しました";
       $("stayStatus").textContent = msg + "。少し待ってからもう一度押すか、下のGoogleマップ検索・公式サイトを使ってください。";
     }).then(function () { clearTimeout(timer); stayBusy = false; $("stayLoad").disabled = false; });
   }
-  function initStayMap() {
-    if (stayInited) { if (stayMap) setTimeout(function () { stayMap.invalidateSize(); }, 50); return; }
-    stayInited = true;
-    if (typeof L === "undefined") { $("stayMap").style.display = "none"; $("stayMapFallback").style.display = "block"; $("stayLoad").disabled = true; $("stayHere").disabled = true; return; }
-    stayMap = L.map("stayMap", { scrollWheelZoom: false }).setView([34.65, 135.75], 9);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap contributors" }).addTo(stayMap);
-    stayLayer = L.layerGroup().addTo(stayMap);
-    setTimeout(function () { stayMap.invalidateSize(); loadStay(); }, 60);
+  // 泊まる場所の点は、依頼先の地図(map)に別レイヤーとして重ねる
+  function setupStayLayer() {
+    stayMap = map;
+    stayLayer = L.layerGroup().addTo(map);
   }
   $("stayLoad").addEventListener("click", loadStay);
   ["lyRv", "lyCamp", "lyMichi"].forEach(function (id) { $(id).addEventListener("change", renderStayMarkers); });
+  $("lyShop").addEventListener("change", renderShops);
   $("stayHere").addEventListener("click", function () {
+    if (!stayMap) return;
     if (!navigator.geolocation) { $("stayStatus").textContent = "このブラウザでは現在地を使えません。"; return; }
     $("stayStatus").textContent = "現在地を確認中…";
     navigator.geolocation.getCurrentPosition(function (pos) {
@@ -1170,18 +1152,18 @@
   var CARE = [
     { id: "trip", title: "出発前に毎回", items: [
       { t: "清水タンクを満タンにする", why: "給水できる場所は少ない。災害の備えにもなる。", v: "2e2HwXaobrU" },
-      { t: "タイヤの空気圧を確かめる", why: "気温が下がると空気圧も下がる。", v: "aIhm1jGYuoI" },
+      { t: "タイヤの空気圧を確かめる(空気入れを積んでおく)", why: "気温が下がると空気圧も下がる。", v: "aIhm1jGYuoI" },
       { t: "行き先のハザードマップと天気を見る", why: "大雨の夜、海沿いの駐車場が冠水した。", v: "SNOyEbtyRuk" },
       { t: "ウエットティッシュ・キッチンペーパーを補充する", why: "細かい物は忘れやすい。", v: "0k3Y3PubGY8" }
     ]},
     { id: "after", title: "雨・雪の日のあと", items: [
       { t: "床下・後ろの収納が濡れていないか見る", why: "コーキングの切れ目から雨が入り、床がカビた。", v: "2e2HwXaobrU" },
       { t: "融雪剤の上を走ったら、下回りを洗う", why: "融雪剤が付いたままだとすぐ錆びる。", v: "UyiW1n8xdDc" },
-      { t: "結露を拭いたタオルを乾かす", why: "窓を少し開けると結露が減る。", v: "UyiW1n8xdDc" }
+      { t: "結露を拭いたタオルを乾かす(吸水カーテンも便利)", why: "窓を少し開けると結露が減る。", v: "UyiW1n8xdDc" }
     ]},
     { id: "monthly", title: "毎月", cal: "RRULE:FREQ=MONTHLY", items: [
       { t: "FFヒーターを30分ほど動かす", why: "使わないと燃料が古くなり故障する。夏も忘れずに。", v: "pJrhb_YO3lA" },
-      { t: "ジャンプスターター・ポータブル電源を充電する(推論)", why: "いざという時に空では使えない。", v: "aIhm1jGYuoI" }
+      { t: "ジャンプスターター・ポータブル電源を充電し、積んでおく(推論)", why: "いざという時に空では使えない。", v: "aIhm1jGYuoI" }
     ]},
     { id: "filter", title: "浄水装置を使っているなら", cal: "RRULE:FREQ=WEEKLY;INTERVAL=2", items: [
       { t: "フィルターを交換する(2週間に1回・汚れがひどければ3日に1回)", why: "油取りシートなら1回100円ほど。", v: "SNOyEbtyRuk" },
@@ -1199,11 +1181,9 @@
       { t: "生活用水タンクに温度計を付ける", why: "凍結しないか水温で確かめる。", v: "4LP3-e0i4MU" }
     ]},
     { id: "always", title: "いつも積んでおく", items: [
-      { t: "空気入れ", why: "空気圧をすぐ直せる。", v: "aIhm1jGYuoI" },
-      { t: "ジャンプスターター・牽引ロープ・輪止め", why: "バッテリー上がり・立ち往生に。", v: "aIhm1jGYuoI" },
+      { t: "牽引ロープ・輪止め", why: "立ち往生に備える。", v: "aIhm1jGYuoI" },
       { t: "二酸化炭素(CO2)の測定器", why: "2,000ppmを超えたら換気。", v: "4LP3-e0i4MU" },
-      { t: "ライト(懐中電灯)", why: "事故の時、車を照らして二次災害を防ぐ。", v: "UyiW1n8xdDc" },
-      { t: "結露を拭くタオル・吸水するカーテン", why: "寝袋が濡れず、断熱にもなる。", v: "UyiW1n8xdDc" }
+      { t: "ライト(懐中電灯)", why: "事故の時、車を照らして二次災害を防ぐ。", v: "UyiW1n8xdDc" }
     ]},
     { id: "snow", title: "冬に積む", items: [
       { t: "スノーワイパー", why: "凍りにくく雪も取りやすい。", v: "4LP3-e0i4MU" },
