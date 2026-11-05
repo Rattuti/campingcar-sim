@@ -373,7 +373,7 @@
       <h2>点検・備品チェックリスト</h2>
       <p class="desc"><a href="https://www.youtube.com/@kupiochannel" target="_blank" rel="noopener">クピオちゃんねる</a>の動画14本から作りました。「使用例」は動画で使われていた製品で、リンクは検索結果です(性能や価格は確かめていません)。</p>
       <div class="kpis" id="careKpis"></div>
-      <div class="care-tabs" id="careTabs" role="group" aria-label="区分の切り替え"></div>
+      <div class="care-tabs" id="careTabs" role="group" aria-label="区分へ移動"></div>
     </div>
     <div class="cards" id="careList"></div>
     <p class="note">「(推論)」は動画で間隔が示されていない目安です。説明書の指示を優先してください。</p>
@@ -1230,32 +1230,35 @@
       return '<span class="pchip"><span class="pn">' + esc(pr.n) + "</span>" + (pr.note ? '<span class="pnote">' + esc(pr.note) + "</span>" : "") + links + "</span>";
     }).join("") + "</div>";
   }
-  var careSec = CARE[0].id;
   function renderCare() {
     var total = 0, done = 0;
-    $("careTabs").innerHTML = CARE.map(function (sec) {
-      var n = sec.items.filter(function (it, i) { return careDone[sec.id + i]; }).length;
+    var cards = CARE.map(function (sec) {
+      var n = 0;
+      var rows = sec.items.map(function (it, i) {
+        var key = sec.id + i, on = !!careDone[key];
+        if (on) n++;
+        return '<div class="care-item' + (on ? " done" : "") + '"><input type="checkbox" id="care-' + key + '" data-care="' + key + '"' + (on ? " checked" : "") + '>' +
+          '<label class="ttl" for="care-' + key + '">' + esc(it.t) + '</label><a class="vid" href="' + YT + it.v + '" target="_blank" rel="noopener">動画</a>' +
+          '<span class="why">' + esc(it.why) + "</span>" + prodHtml(it.p) + "</div>";
+      }).join("");
       total += sec.items.length; done += n;
-      return '<button type="button" data-care-sec="' + sec.id + '" aria-pressed="' + (sec.id === careSec) + '">' + esc(sec.title) + '<span class="c">' + n + "/" + sec.items.length + "</span></button>";
+      sec._n = n;
+      return '<article class="card" id="care-sec-' + sec.id + '"><div class="row" style="justify-content:space-between"><h3>' + esc(sec.title) + '</h3><span class="note">' + n + " / " + sec.items.length + "</span></div>" + rows +
+        (sec.cal || n ? '<div class="row" style="margin-top:8px">' + (sec.cal ? '<a class="stay-link" href="' + esc(careCalUrl(sec)) + '" target="_blank" rel="noopener">繰り返しの予定をカレンダーに入れる</a>' : "") +
+        (n ? '<button class="small" data-care-reset="' + sec.id + '">チェックを外す</button>' : "") + "</div>" : "") + "</article>";
     }).join("");
-    var sec = CARE.filter(function (x) { return x.id === careSec; })[0], n = 0;
-    var rows = sec.items.map(function (it, i) {
-      var key = sec.id + i, on = !!careDone[key];
-      if (on) n++;
-      return '<div class="care-item' + (on ? " done" : "") + '"><input type="checkbox" id="care-' + key + '" data-care="' + key + '"' + (on ? " checked" : "") + '>' +
-        '<label class="ttl" for="care-' + key + '">' + esc(it.t) + '</label><a class="vid" href="' + YT + it.v + '" target="_blank" rel="noopener">動画</a>' +
-        '<span class="why">' + esc(it.why) + "</span>" + prodHtml(it.p) + "</div>";
+    $("careList").innerHTML = cards;
+    // 上のボタンは、その区分の位置まで移動するためのもの(絞り込みはしない)
+    $("careTabs").innerHTML = CARE.map(function (sec) {
+      return '<button type="button" data-care-jump="' + sec.id + '">' + esc(sec.title) + '<span class="c">' + sec._n + "/" + sec.items.length + "</span></button>";
     }).join("");
-    $("careList").innerHTML = '<article class="card"><div class="row" style="justify-content:space-between"><h3>' + esc(sec.title) + '</h3><span class="note">' + n + " / " + sec.items.length + "</span></div>" + rows +
-      '<div class="row" style="margin-top:8px">' + (sec.cal ? '<a class="stay-link" href="' + esc(careCalUrl(sec)) + '" target="_blank" rel="noopener">繰り返しの予定をカレンダーに入れる</a>' : "") +
-      (n ? '<button class="small" data-care-reset="' + sec.id + '">チェックを外す</button>' : "") + "</div></article>";
-    $("careKpis").innerHTML = '<div class="kpi"><div class="k">チェック済み(全体)</div><div class="v">' + done + "<small> / " + total + "</small></div></div>";
+    $("careKpis").innerHTML = '<div class="kpi"><div class="k">チェック済み</div><div class="v">' + done + "<small> / " + total + "</small></div></div>";
   }
   $("careTabs").addEventListener("click", function (e) {
-    var b = e.target.closest("button[data-care-sec]");
+    var b = e.target.closest("button[data-care-jump]");
     if (!b) return;
-    careSec = b.getAttribute("data-care-sec");
-    renderCare();
+    var el = $("care-sec-" + b.getAttribute("data-care-jump"));
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   $("careList").addEventListener("change", function (e) {
     var key = e.target.getAttribute("data-care");
