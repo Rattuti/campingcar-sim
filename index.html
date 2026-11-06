@@ -52,6 +52,10 @@
   .tabs .count { display: inline-block; min-width: 1.4em; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-dark); font-size: var(--fs-s); text-align: center; }
   .view { display: none; }
   .view.active { display: grid; gap: 16px; }
+  .view.active + .view.active { margin-top: 28px; }
+  .view { scroll-margin-top: 60px; }
+  .page-jump { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+  .page-jump a { display: inline-flex; align-items: center; min-height: 34px; padding: 4px 12px; border-radius: 17px; background: var(--panel); font-size: var(--fs-s); text-decoration: none; }
   .panel { background: var(--panel); border: 0; border-radius: 12px; padding: 18px 20px; min-width: 0; }
   .panel h2 { font-size: 1.02rem; margin: 0 0 4px; }
   .panel h3 { font-size: var(--fs-m); margin: 16px 0 6px; }
@@ -181,31 +185,14 @@
   <p class="subtitle">車種選び・自作の計算・依頼先と泊まる場所の地図。入力はページを閉じると消えます。</p>
 
   <nav class="tabs" role="tablist">
-    <button role="tab" aria-selected="true" data-view="types">車種ガイド</button>
-    <button role="tab" aria-selected="false" data-view="diy">自作シミュレーター</button>
-    <button role="tab" aria-selected="false" data-view="shops">地図</button>
-    <button role="tab" aria-selected="false" data-view="care">点検・備品</button>
-    <button role="tab" aria-selected="false" data-view="list">計算結果リスト<span class="count" id="listCount">0</span></button>
-    <button role="tab" aria-selected="false" data-view="info">情報</button>
+    <button role="tab" aria-selected="true" data-page="1">計画<span class="count" id="listCount">0</span></button>
+    <button role="tab" aria-selected="false" data-page="2">選ぶ・探す</button>
+    <button role="tab" aria-selected="false" data-page="3">備え・情報</button>
   </nav>
 
-  <!-- ===== 車種ガイド ===== -->
-  <section class="view active" id="view-types">
-    <div class="panel">
-      <h2>人数と免許から絞り込む</h2>
-      <p class="desc">人数と免許の取得日を入れると、向いている車種が分かります。</p>
-      <div class="row">
-        <div class="field"><label for="tPeople">寝る人数</label><input type="number" id="tPeople" min="1" max="10" value="4"></div>
-        <div class="field"><label for="tLicense">普通免許の取得日</label><input type="date" id="tLicense"></div>
-        <div class="field"><span class="lbl">運転できる車両総重量</span><span id="tLicenseResult" class="note">取得日を入れると表示します</span></div>
-      </div>
-    </div>
-    <div class="cards" id="typeCards"></div>
-    <p class="note">価格・重さは目安です。実際は車検証やカタログで確認してください。</p>
-  </section>
-
+  <nav class="page-jump" data-page="1" aria-label="このページ内の移動"><a href="#view-diy">自作シミュレーター</a><a href="#view-list">計算結果リスト</a></nav>
   <!-- ===== 自作シミュレーター ===== -->
-  <section class="view" id="view-diy">
+  <section class="view active" id="view-diy" data-page="1">
     <div class="grid2">
       <div class="panel">
         <h2>条件</h2>
@@ -277,8 +264,47 @@
     </div>
   </section>
 
+  <!-- ===== 計算結果リスト ===== -->
+  <section class="view active" id="view-list" data-page="1">
+    <div class="panel">
+      <h2>計算結果リスト</h2>
+      <p class="desc">自作シミュレーターで追加した案を比べられます。</p>
+      <div class="row" style="margin-bottom:8px">
+        <select id="lSort">
+          <option value="added">追加した順</option>
+          <option value="total">総額が安い順</option>
+          <option value="material">材料費が安い順</option>
+          <option value="sleep">寝られる人数が多い順</option>
+        </select>
+        <button class="small" id="lCopy">表をコピー(表計算に貼れる形式)</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>案の名前</th><th>ベース車</th><th class="num">乗車/就寝</th><th>寝る場所</th><th>8ナンバー</th><th class="num">材料・装備費</th><th class="num">総額</th><th></th></tr></thead>
+          <tbody id="lBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <nav class="page-jump" data-page="2" aria-label="このページ内の移動"><a href="#view-types">車種ガイド</a><a href="#view-shops">地図(依頼先・泊まる場所)</a></nav>
+  <!-- ===== 車種ガイド ===== -->
+  <section class="view" id="view-types" data-page="2">
+    <div class="panel">
+      <h2>人数と免許から絞り込む</h2>
+      <p class="desc">人数と免許の取得日を入れると、向いている車種が分かります。</p>
+      <div class="row">
+        <div class="field"><label for="tPeople">寝る人数</label><input type="number" id="tPeople" min="1" max="10" value="4"></div>
+        <div class="field"><label for="tLicense">普通免許の取得日</label><input type="date" id="tLicense"></div>
+        <div class="field"><span class="lbl">運転できる車両総重量</span><span id="tLicenseResult" class="note">取得日を入れると表示します</span></div>
+      </div>
+    </div>
+    <div class="cards" id="typeCards"></div>
+    <p class="note">価格・重さは目安です。実際は車検証やカタログで確認してください。</p>
+  </section>
+
   <!-- ===== 制作依頼先マップ ===== -->
-  <section class="view" id="view-shops">
+  <section class="view" id="view-shops" data-page="2">
     <div class="panel">
       <h2>地図</h2>
       <p class="desc">依頼先と泊まる場所を1つの地図に表示します。地図をクリックすると、そこからの距離が出ます。</p>
@@ -377,9 +403,9 @@
     </div>
   </section>
 
-
+  <nav class="page-jump" data-page="3" aria-label="このページ内の移動"><a href="#view-care">点検・備品</a><a href="#view-info">情報</a></nav>
   <!-- ===== 点検・備品 ===== -->
-  <section class="view" id="view-care">
+  <section class="view" id="view-care" data-page="3">
     <div class="panel">
       <h2>点検・備品チェックリスト</h2>
       <p class="desc"><a href="https://www.youtube.com/@kupiochannel" target="_blank" rel="noopener">クピオちゃんねる</a>の動画14本から作りました。「使用例」は動画で使われていた製品で、リンクは検索結果です(性能や価格は確かめていません)。</p>
@@ -390,32 +416,8 @@
     <p class="note">「(推論)」は動画で間隔が示されていない目安です。説明書の指示を優先してください。</p>
   </section>
 
-  <!-- ===== 計算結果リスト ===== -->
-  <section class="view" id="view-list">
-    <div class="panel">
-      <h2>計算結果リスト</h2>
-      <p class="desc">自作シミュレーターで追加した案を比べられます。</p>
-      <div class="row" style="margin-bottom:8px">
-        <select id="lSort">
-          <option value="added">追加した順</option>
-          <option value="total">総額が安い順</option>
-          <option value="material">材料費が安い順</option>
-          <option value="sleep">寝られる人数が多い順</option>
-        </select>
-        <button class="small" id="lCopy">表をコピー(表計算に貼れる形式)</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>案の名前</th><th>ベース車</th><th class="num">乗車/就寝</th><th>寝る場所</th><th>8ナンバー</th><th class="num">材料・装備費</th><th class="num">総額</th><th></th></tr></thead>
-          <tbody id="lBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-
   <!-- ===== 情報源 ===== -->
-  <section class="view" id="view-info">
+  <section class="view" id="view-info" data-page="3">
     <div class="panel">
       <h2>定期的に見直す情報</h2>
       <p class="desc">定期的に見直す項目です。検索は直近1か月の記事だけを出します。</p>
@@ -460,6 +462,14 @@
       </details>
     </div>
   </section>
+
+
+
+
+
+
+
+
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -570,13 +580,17 @@
 
   /* ---------- タブ ---------- */
   var mapInited = false;
+  // 3ページ構成: 1=計画(使用頻度・高) 2=選ぶ・探す(中) 3=備え・情報(低)
+  function showPage(page) {
+    document.querySelectorAll(".tabs button").forEach(function (x) { x.setAttribute("aria-selected", x.dataset.page === page ? "true" : "false"); });
+    document.querySelectorAll(".view").forEach(function (v) { v.classList.toggle("active", v.dataset.page === page); });
+    document.querySelectorAll(".page-jump").forEach(function (n) { n.hidden = n.dataset.page !== page; });
+    if (page === "1") renderList();
+    if (page === "2") { initMap(); if (map) setTimeout(function () { map.invalidateSize(); }, 50); }
+    window.scrollTo(0, 0);
+  }
   document.querySelectorAll(".tabs button").forEach(function (b) {
-    b.addEventListener("click", function () {
-      document.querySelectorAll(".tabs button").forEach(function (x) { x.setAttribute("aria-selected", x === b ? "true" : "false"); });
-      document.querySelectorAll(".view").forEach(function (v) { v.classList.toggle("active", v.id === "view-" + b.dataset.view); });
-      if (b.dataset.view === "shops") { initMap(); if (map) setTimeout(function () { map.invalidateSize(); }, 50); }
-      if (b.dataset.view === "list") renderList();
-    });
+    b.addEventListener("click", function () { showPage(b.dataset.page); });
   });
 
   /* ---------- 車種ガイド ---------- */
@@ -855,7 +869,8 @@
     saved.push(r);
     $("dName").value = "";
     $("listCount").textContent = saved.length;
-    toast("「" + name + "」を計算結果リストに追加しました");
+    renderList();
+    toast("「" + name + "」を下の計算結果リストに追加しました");
   });
 
   /* ---------- 計算結果リスト ---------- */
@@ -1294,6 +1309,8 @@
   renderStayButtons();
   renderRoute();
   renderCare();
+  document.querySelectorAll(".page-jump").forEach(function (n) { n.hidden = n.dataset.page !== "1"; });
+  renderList();
 })();
 </script>
 </body>
